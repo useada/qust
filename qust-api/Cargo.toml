@@ -14,7 +14,8 @@ serde = { workspace = true }
 chrono = { workspace = true}
 anyhow = { workspace = true }
 tokio = { workspace = true }
-ctp-futures = "0.1.0"
+#ctp-futures = "0.1.0"
+ctp-futures = {path = "../../ctp-futures", version = "0.1.0"}
 log = "0.4.22"
 encoding = "0.2.33"
 simple-error = "0.3.1"

@@ -365,8 +365,6 @@ dependencies = [
 [[package]]
 name = "ctp-futures"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f199f9a696711d9be773ed256684915de3866509a25e711f36cbe99c85a485cd"
 dependencies = [
  "Inflector",
  "bincode 2.0.0-rc.3",
