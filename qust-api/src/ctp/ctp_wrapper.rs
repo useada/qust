@@ -3,7 +3,9 @@
 use qust:: { prelude::*, std_prelude::* };
 use ctp_futures::md_api::MdApi;
 use ctp_futures::trader_api::TraderApi;
-use ctp_futures::{ md_api, trader_api as td_api, TThostFtdcClientSystemInfoType};
+use ctp_futures::{ md_api, trader_api as td_api };
+#[cfg(target_os = "macos")]
+use ctp_futures::{ TThostFtdcClientSystemInfoType};
 use futures::{StreamExt, executor::block_on};
 use super::config::CtpAccountConfig;
 use super::utiles::*;
@@ -174,10 +176,16 @@ impl Ctp {
         set_cstr_from_str_truncate_i8(&mut req.UserID, self.ca.account.as_str());
         set_cstr_from_str_truncate_i8(&mut req.Password, self.ca.password.as_str());
 
-
-        let mut client_system_info : TThostFtdcClientSystemInfoType = [0;273usize];
-        set_cstr_from_str_truncate_i8(&mut client_system_info, "");
-        self.td.lock().unwrap().req_user_login(&mut req, self.td_accu(), 0, client_system_info)
+        #[cfg(target_os = "macos")]
+        {
+            let mut client_system_info : TThostFtdcClientSystemInfoType = [0;273usize];
+            set_cstr_from_str_truncate_i8(&mut client_system_info, "");
+            self.td.lock().unwrap().req_user_login(&mut req, self.td_accu(), 0, client_system_info)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.td.lock().unwrap().req_user_login(&mut req, self.td_accu())
+        }
     }
 
     fn settlement_info_confirm(&self) -> i32 {
