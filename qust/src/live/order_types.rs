@@ -318,7 +318,7 @@ impl OrderPool {
             }
             CancelRes::HaveDiffOrder(order_ref) => {
                 let order_res = self.cancel_order(&order_ref)?;
-                loge!(self.ticker, "order pool need to cacel this order: {:?}", order_res);
+                loge!(self.ticker, "order pool need to cancel this order: {:?}", order_res);
                 Ok(order_res)
             }
             CancelRes::NotHave => {
