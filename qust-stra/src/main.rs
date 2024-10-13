@@ -16,7 +16,7 @@ impl ApiType for TwoMaTickOrderAction {
         let mut last_short_value = 0f64;
         let mut last_long_value = 0f64;
         Box::new(move |stream_api| {
-            let c = stream_api.tick_data.c as f64;
+            let c = stream_api.tick_data.last_price as f64;
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             let hold = stream_api.hold.sum();
@@ -24,12 +24,12 @@ impl ApiType for TwoMaTickOrderAction {
             if hold == 0 {
                 match last_short_value != 0. && last_short_value < last_long_value && short_value >= long_value {
                     true => {
-                        res = OrderAction::LoOpen(1, stream_api.tick_data.bid1);
+                        res = OrderAction::LoOpen(1, stream_api.tick_data.bid_price1);
                     }
                     false => (),
                 }
             } else if hold > 0 && short_value < long_value {
-                res = OrderAction::ShClose(hold, stream_api.tick_data.ask1);
+                res = OrderAction::ShClose(hold, stream_api.tick_data.ask_price1);
             }
             last_short_value = short_value;
             last_long_value = long_value;
@@ -53,7 +53,7 @@ impl Ktn for TwoMaStra {
         let mut last_short_value = 0f64;
         let mut last_long_value = 0f64;
         Box::new(move |di_kline| {
-            let c = di_kline.di.c()[di_kline.i] as f64;
+            let c = di_kline.di.close()[di_kline.i] as f64;
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             match last_norm_hold {

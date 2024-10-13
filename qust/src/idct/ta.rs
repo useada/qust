@@ -26,7 +26,7 @@ pub enum KlineType {
 pub trait Ta {
     fn start(&self, _di: &Di) {}
     fn calc_di(&self, di: &Di) -> avv32 {
-        vec![di.c()]
+        vec![di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32;
     fn end(&self, _di: &Di) {}
@@ -74,7 +74,7 @@ pub struct CommSlip(pub f32, pub f32);
 
 impl Di {
     pub fn profit2(&self) -> Vec<f32> {
-        let c = self.c();
+        let c = self.close();
         let c_lag = c.lag(1f32);
         let mut res = izip!(c.iter(), c_lag.iter())
             .map(|(x, y)| x / y - 1.)
@@ -84,7 +84,7 @@ impl Di {
     }
 
     pub fn profit(&self) -> Vec<f32> {
-        let c = self.c();
+        let c = self.close();
         let c_lag = c.lag(1f32);
         let mut res = izip!(c.iter(), c_lag.iter(), self.pcon.price.ki.rolling(2))
             .map(|(x, y, z)| {
@@ -103,7 +103,7 @@ impl Di {
 #[typetag::serde]
 impl Ta for CommSlip {
     fn calc_da(&self, data: Vec<&[f32]>, di: &Di) -> vv32 {
-        let c = *di.c().last().unwrap();
+        let c = *di.close().last().unwrap();
         let ticker_info = di.pcon.ticker.info();
         let tz = ticker_info.tz;
         let pv = ticker_info.pv;
@@ -127,10 +127,10 @@ impl Ta for KlineType {
     fn calc_di(&self, di: &Di) -> avv32 {
         use KlineType::*;
         match self {
-            Open => di.o(),
-            High => di.h(),
-            Low => di.l(),
-            Close => di.c(),
+            Open => di.open(),
+            High => di.high(),
+            Low => di.low(),
+            Close => di.close(),
             _ => todo!(),
         }
         .pip(|x| vec![x])
@@ -149,7 +149,7 @@ pub struct Rsi(pub usize);
 #[typetag::serde]
 impl Ta for Rsi {
     fn calc_di(&self, di: &Di) -> avv32 {
-        vec![di.c()]
+        vec![di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
         let da = da[0];
@@ -182,7 +182,7 @@ pub struct Tr;
 #[typetag::serde]
 impl Ta for Tr {
     fn calc_di(&self, di: &Di) -> avv32 {
-        vec![di.h(), di.l(), di.c()]
+        vec![di.high(), di.low(), di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
         let h = da[0];
@@ -221,7 +221,7 @@ pub struct RollTa<T>(pub T, pub RollFunc, pub RollOps);
 #[typetag::serde(name = "rollta_klinetype")]
 impl Ta for RollTa<KlineType> {
     fn calc_di(&self, di: &Di) -> avv32 {
-        vec![di.c()]
+        vec![di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
         da.roll(self.1, self.2.clone())
@@ -279,7 +279,7 @@ pub struct KDayRatio(pub usize);
 #[typetag::serde]
 impl Ta for KDayRatio {
     fn calc_di(&self, di: &Di) -> avv32 {
-        vec![di.o(), di.c()]
+        vec![di.open(), di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
         let gap = izip!(da[0].iter(), da[1].iter())
@@ -325,7 +325,7 @@ impl Ta for ShiftDays {
 
     fn calc_da(&self, da: Vec<&[f32]>, di: &Di) -> vv32 {
         // let da_vec = di.t().iter().map(|x| x.date()).collect();
-        let da_vec = find_day_index_night_flat(di.t());
+        let da_vec = find_day_index_night_flat(di.date_time());
         let grp = Grp(da_vec);
         let (vec_index, vec_value) = grp.apply(da[0], |x| self.2.get(x));
         let vec_value = vec_value.lag(self.0 as f32);
@@ -379,13 +379,13 @@ pub struct DayKlineWrapper(pub KlineType);
 #[typetag::serde(name = "DayKlineWrapper")]
 impl Ta for DayKlineWrapper {
     fn calc_da(&self, _da: Vec<&[f32]>, di: &Di) -> vv32 {
-        let da_vec = find_day_index_night_flat(di.t());
+        let da_vec = find_day_index_night_flat(di.date_time());
         let grp = Grp(da_vec);
         let (_, vec_value) = match self.0 {
-            KlineType::Open => grp.apply(&di.o(), |x| vec![x[0]; x.len()]),
-            KlineType::High => grp.apply(&di.h(), |x| x.cum_max()),
-            KlineType::Low => grp.apply(&di.l(), |x| x.cum_min()),
-            KlineType::Close => grp.apply(&di.c(), |x| vec![*x.last().unwrap(); x.len()]),
+            KlineType::Open => grp.apply(&di.open(), |x| vec![x[0]; x.len()]),
+            KlineType::High => grp.apply(&di.high(), |x| x.cum_max()),
+            KlineType::Low => grp.apply(&di.low(), |x| x.cum_min()),
+            KlineType::Close => grp.apply(&di.close(), |x| vec![*x.last().unwrap(); x.len()]),
             _ => panic!("this type of Kline does not implement DayKlineWrapper"),
         };
         vec![vec_value.concat()]
@@ -437,7 +437,7 @@ pub struct Jta(pub usize, pub usize, pub usize);
 impl Ta for Kta {
     fn calc_di(&self, di: &Di) -> avv32 {
         // vec![di.h(), di.l(), di.c()]
-        vec![di.c(), di.c(), di.c()]
+        vec![di.close(), di.close(), di.close()]
     }
     fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
         let rsvnum =

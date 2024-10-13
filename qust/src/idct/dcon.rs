@@ -56,30 +56,31 @@ impl Convert {
             Tf(_start, _end) => price,
             Ha(w) => {
                 let close_price = izip!(
-                    price.o.iter(),
-                    price.h.iter(),
-                    price.l.iter(),
-                    price.c.iter(),
+                    price.open.iter(),
+                    price.high.iter(),
+                    price.low.iter(),
+                    price.close.iter(),
                 )
                 .map(|(o, h, l, c)| (o + h + l + c) / 4.0);
-                let open_price = price.c.ema(*w);
+                let open_price = price.close.ema(*w);
                 let mut open_price = open_price.lag(1);
                 open_price[0] = open_price[1];
                 let high_price: Vec<f32> =
-                    izip!(price.h.iter(), open_price.iter(), close_price.clone())
+                    izip!(price.high.iter(), open_price.iter(), close_price.clone())
                         .map(|(a, b, c)| a.max(*b).max(c))
                         .collect();
                 let low_price: Vec<f32> =
-                    izip!(price.l.iter(), open_price.iter(), close_price.clone())
+                    izip!(price.low.iter(), open_price.iter(), close_price.clone())
                         .map(|(a, b, c)| a.min(*b).min(c))
                         .collect();
                 PriceArc {
-                    t: price.t.clone(),
-                    o: Arc::new(open_price),
-                    h: Arc::new(high_price),
-                    l: Arc::new(low_price),
-                    c: Arc::new(close_price.collect()),
-                    v: price.v.clone(),
+                    date_time: price.date_time.clone(),
+                    open: Arc::new(open_price),
+                    high: Arc::new(high_price),
+                    low: Arc::new(low_price),
+                    close: Arc::new(close_price.collect()),
+                    volume: price.volume.clone(),
+                    amount: price.amount.clone(),
                     ki: price.ki.clone(),
                     finished: None,
                     immut_info: price.immut_info.clone(),
@@ -87,29 +88,30 @@ impl Convert {
             }
             PreNow(_pre, now) => now.convert(price, di),
             Event(tri) => {
-                let mut price_res = PriceOri::with_capacity(price.o.len());
-                let mut finished_vec = Vec::with_capacity(price_res.o.capacity());
+                let mut price_res = PriceOri::with_capacity(price.open.len());
+                let mut finished_vec = Vec::with_capacity(price_res.open.capacity());
                 let mut f = tri.update_kline_func(di, &price);
-                for (i, (&t, &o, &h, &l, &c, &v, ki)) in izip!(
-                    price.t.iter(),
-                    price.o.iter(),
-                    price.h.iter(),
-                    price.l.iter(),
-                    price.c.iter(),
-                    price.v.iter(),
+                for (i, (&date_time, &open, &high, &low, &close, &volume, &amount, ki)) in izip!(
+                    price.date_time.iter(),
+                    price.open.iter(),
+                    price.high.iter(),
+                    price.low.iter(),
+                    price.close.iter(),
+                    price.volume.iter(),
+                    price.amount.iter(),
                     price.ki.iter(),
                 )
                 .enumerate()
                 {
-                    let kline_data = KlineData { t, o, h, l, c, v, ki: ki.clone() };
+                    let kline_data = KlineData { date_time, open, high, low, close, volume, amount, ki: ki.clone() };
                     let finished = f(&kline_data, &mut price_res, i);
                     finished_vec.push(finished);
                 }
                 (price_res, Some(finished_vec)).to_arc()
             }
             VolFilter(window, percent) => {
-                let (finished_vec, mask_len) = price.v.rolling(*window).fold(
-                    (Vec::with_capacity(price.v.len()), 0usize),
+                let (finished_vec, mask_len) = price.volume.rolling(*window).fold(
+                    (Vec::with_capacity(price.volume.len()), 0usize),
                     |mut accu, x| {
                         let m = x.last().unwrap() >= &x.quantile(*percent as f32 / 100f32);
                         if m {
@@ -123,42 +125,45 @@ impl Convert {
                 let mut price_res = PriceOri::with_capacity(mask_len);
                 izip!(
                     finished_vec.iter(),
-                    price.t.iter(),
-                    price.o.iter(),
-                    price.h.iter(),
-                    price.l.iter(),
-                    price.c.iter(),
-                    price.v.iter()
+                    price.date_time.iter(),
+                    price.open.iter(),
+                    price.high.iter(),
+                    price.low.iter(),
+                    price.close.iter(),
+                    price.volume.iter(),
+                    price.amount.iter(),
                 )
-                .for_each(|(i, t, o, h, l, c, v)| {
+                .for_each(|(i, date_time, open, high, low, close, volume, amount)| {
                     if let KlineState::Finished = i {
-                        price_res.t.push(*t);
-                        price_res.o.push(*o);
-                        price_res.h.push(*h);
-                        price_res.l.push(*l);
-                        price_res.c.push(*c);
-                        price_res.v.push(*v);
+                        price_res.date_time.push(*date_time);
+                        price_res.open.push(*open);
+                        price_res.high.push(*high);
+                        price_res.low.push(*low);
+                        price_res.close.push(*close);
+                        price_res.volume.push(*volume);
+                        price_res.amount.push(*amount);
                     }
                 });
                 (price_res, Some(finished_vec)).to_arc()
             }
             Log => {
-                let numerator = price.l.min();
+                let numerator = price.low.min();
                 PriceArc {
-                    t: price.t.clone(),
-                    o: price.o.map(|x| x / numerator).to_arc(),
-                    h: price.h.map(|x| x / numerator).to_arc(),
-                    l: price.l.map(|x| x / numerator).to_arc(),
-                    c: price.c.map(|x| x / numerator).to_arc(),
-                    v: price.v.clone(),
+                    date_time: price.date_time.clone(),
+                    open: price.open.map(|x| x / numerator).to_arc(),
+                    high: price.high.map(|x| x / numerator).to_arc(),
+                    low: price.low.map(|x| x / numerator).to_arc(),
+                    close: price.close.map(|x| x / numerator).to_arc(),
+                    volume: price.volume.clone(),
+                    amount: price.amount.clone(),
                     ki: price.ki.clone(),
                     finished: None,
                     immut_info: price.immut_info.clone(),
                 }
             }
             FlatTick => {
-                let mut res = Vec::with_capacity(price.l.len());
-                let c_vec_ori = &price.c;
+                let mut res = Vec::with_capacity(price.low.len());
+                let c_vec_ori = &price.close;
                 res.push(c_vec_ori[0]);
                 for i in 2..c_vec_ori.len() {
                     if c_vec_ori[i - 2] == c_vec_ori[i] && c_vec_ori[i - 1] != c_vec_ori[i] {
@@ -170,12 +175,13 @@ impl Convert {
                 res.push(*c_vec_ori.last().unwrap());
                 let res = Arc::new(res);
                 PriceArc {
-                    t: price.t.clone(),
-                    o: res.clone(),
-                    h: res.clone(),
-                    l: res.clone(),
-                    c: res,
-                    v: price.v.clone(),
+                    date_time: price.date_time.clone(),
+                    open: res.clone(),
+                    high: res.clone(),
+                    low: res.clone(),
+                    close: res,
+                    volume: price.volume.clone(),
+                    amount: price.amount.clone(),
                     ki: price.ki.clone(),
                     finished: None,
                     immut_info: price.immut_info.clone(),

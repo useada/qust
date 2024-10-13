@@ -43,7 +43,7 @@ pub struct Filterday;
 impl Cond for Filterday {
     fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
         let data: Vec<tt> = di
-            .t()
+            .date_time()
             .iter()
             .map(|x| tt::from_hms_opt(x.hour(), x.minute(), x.second()).unwrap())
             .collect();
@@ -113,7 +113,7 @@ pub struct FilterdayTime(pub ForCompare<tt>);
 #[typetag::serde]
 impl Cond for FilterdayTime {
     fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
-        let data = di.t();
+        let data = di.date_time();
         let f = self.0.clone();
         Box::new(move |e: usize, _o: usize| f.compare_time(&data[e]))
     }

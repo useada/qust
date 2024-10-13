@@ -151,8 +151,8 @@ impl CondTypeA for WithDiKline<Stral, RwLock<Di>> {
         let mut update_tick_fn = pcon_ident.inter.update_tick_func(pcon_ident.ticker);
         let mut last_update_tick_time = Default::default();//maybe the update come from hold update
         Box::new(move |stream_api| {
-            let is_finished = if stream_api.tick_data.t > last_update_tick_time {
-                last_update_tick_time = stream_api.tick_data.t;
+            let is_finished = if stream_api.tick_data.date_time > last_update_tick_time {
+                last_update_tick_time = stream_api.tick_data.date_time;
                 update_tick_fn(stream_api.tick_data, &mut di.pcon.price).into()
             } else {
                 false
@@ -201,7 +201,7 @@ where
     fn cond_type_a(&self) -> RetFnCondType3 {
         let di = self.di;
         let mut ops_fn = self.data.cond_type1(di);
-        let mut kline_range_vec = izip!(di.pcon.price.ki.iter(), di.pcon.price.t.iter(), 0..)
+        let mut kline_range_vec = izip!(di.pcon.price.ki.iter(), di.pcon.price.date_time.iter(), 0..)
             .map(|(x, y, z)| {
                 KlineRange { 
                     time_open: x.open_time,
@@ -216,7 +216,7 @@ where
             let tick_data = stream_api.tick_data;
             let hold = stream_api.hold;
             let mut finished = false;
-            while tick_data.t >= kline_range.time_close {
+            while tick_data.date_time >= kline_range.time_close {
                 match kline_range_vec.next() {
                     Some(k_next) => {
                         kline_range = k_next;
@@ -228,7 +228,7 @@ where
                     }
                 }
             }
-            if kline_range.i < 100 || tick_data.bid1 == 0. {
+            if kline_range.i < 100 || tick_data.bid_price1 == 0. {
                 return last_live_target.clone();
             }
             let i = kline_range.i - 1;
@@ -275,8 +275,8 @@ impl<'a> ApiType for WithDiKline<Box<dyn CondType4>, &'a Di> {
         let mut update_tick_fn = di.pcon.inter.update_tick_func(di.pcon.ticker);
         let mut last_update_tick_time = Default::default();
         Box::new(move |stream_api| {
-            let is_finished = if stream_api.tick_data.t > last_update_tick_time {
-                last_update_tick_time = stream_api.tick_data.t;
+            let is_finished = if stream_api.tick_data.date_time > last_update_tick_time {
+                last_update_tick_time = stream_api.tick_data.date_time;
                 update_tick_fn(stream_api.tick_data, &mut di.pcon.price).into()
             } else {
                 false

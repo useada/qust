@@ -19,7 +19,7 @@ impl Ktn for TwoMaStra {
         let mut last_short_value = 0f64;
         let mut last_long_value = 0f64;
         Box::new(move |di_kline| {
-            let c = di_kline.di.c()[di_kline.i] as f64;
+            let c = di_kline.di.close()[di_kline.i] as f64;
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             match last_norm_hold {
@@ -47,8 +47,8 @@ pub struct TwoMaStraOpen(pub usize, pub usize);
 #[typetag::serde]
 impl Cond for TwoMaStraOpen {
     fn cond<'a>(&self,di: &'a Di) -> LoopSig<'a> {
-        let short_ma = di.c().roll(RollFunc::Mean, RollOps::N(self.0));
-        let long_ma = di.c().roll(RollFunc::Mean, RollOps::N(self.1));
+        let short_ma = di.close().roll(RollFunc::Mean, RollOps::N(self.0));
+        let long_ma = di.close().roll(RollFunc::Mean, RollOps::N(self.1));
         Box::new(move |e, _| {
             e > 0 && short_ma[e - 1] < long_ma[e - 1] && short_ma[e] >= long_ma[e]
         })
@@ -62,8 +62,8 @@ pub struct TwoMaStraExit(pub usize, pub usize);
 #[typetag::serde]
 impl Cond for TwoMaStraExit {
     fn cond<'a>(&self,di: &'a Di) -> LoopSig<'a> {
-        let short_ma = di.c().roll(RollFunc::Mean, RollOps::N(self.0));
-        let long_ma = di.c().roll(RollFunc::Mean, RollOps::N(self.1));
+        let short_ma = di.close().roll(RollFunc::Mean, RollOps::N(self.0));
+        let long_ma = di.close().roll(RollFunc::Mean, RollOps::N(self.1));
         Box::new(move |e, _| {
             short_ma[e] < long_ma[e]
         })
@@ -149,7 +149,7 @@ impl CondType7 for TwoMaTick {
         let mut last_short_value = 0f64;
         let mut last_long_value = 0f64;
         Box::new(move |tick_data| {
-            let c = tick_data.c as f64;
+            let c = tick_data.last_price as f64;
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             match last_norm_hold {
@@ -181,7 +181,7 @@ impl ApiType for TwoMaTickOrderAction {
         let mut last_short_value = 0f64;
         let mut last_long_value = 0f64;
         Box::new(move |stream_api| {
-            let c = stream_api.tick_data.c as f64;
+            let c = stream_api.tick_data.last_price as f64;
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             let hold = stream_api.hold.sum();
@@ -189,12 +189,12 @@ impl ApiType for TwoMaTickOrderAction {
             if hold == 0 {
                 match last_short_value != 0. && last_short_value < last_long_value && short_value >= long_value {
                     true => {
-                        res = OrderAction::LoOpen(1, stream_api.tick_data.bid1);
+                        res = OrderAction::LoOpen(1, stream_api.tick_data.bid_price1);
                     }
                     false => (),
                 }
             } else if hold > 0 && short_value < long_value {
-                res = OrderAction::ShClose(hold, stream_api.tick_data.ask1);
+                res = OrderAction::ShClose(hold, stream_api.tick_data.ask_price1);
             }
             last_short_value = short_value;
             last_long_value = long_value;
@@ -214,11 +214,11 @@ impl CondType4 for TwoMaTickOrderAction {
             let hold = stream_cond_type1.stream_api.hold.sum();
             let mut res = OrderAction::No;
             if hold == 0 {
-                if tick_data.c > ma_ta_res[0][i] && ma_ta_res[0][i-1] < ma_ta_res[1][i-1] {
-                    res = OrderAction::LoOpen(1, tick_data.bid1);
+                if tick_data.last_price > ma_ta_res[0][i] && ma_ta_res[0][i-1] < ma_ta_res[1][i-1] {
+                    res = OrderAction::LoOpen(1, tick_data.bid_price1);
                 }
-            } else if hold > 0 && tick_data.c < ma_ta_res[0][i] {
-                res = OrderAction::ShClose(hold, tick_data.ask1);
+            } else if hold > 0 && tick_data.last_price < ma_ta_res[0][i] {
+                res = OrderAction::ShClose(hold, tick_data.ask_price1);
             }
             res
         })

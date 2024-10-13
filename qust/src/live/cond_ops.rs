@@ -20,12 +20,13 @@ impl std::fmt::Debug for DiKline<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let price = &self.di.pcon.price;
         let kline = KlineData {
-            t: price.t[self.i],
-            o: price.o[self.i],
-            h: price.h[self.i],
-            l: price.l[self.i],
-            c: price.c[self.i],
-            v: price.v[self.i],
+            date_time: price.date_time[self.i],
+            open: price.open[self.i],
+            high: price.high[self.i],
+            low: price.low[self.i],
+            close: price.close[self.i],
+            volume: price.volume[self.i],
+            amount: price.amount[self.i],
             ki: price.ki[self.i].clone(),
         };
         write!(f, "{:?}", kline)
@@ -232,8 +233,8 @@ where
         let mut update_tick_fn = pcon_ident.inter.update_tick_func(pcon_ident.ticker);
         let mut last_update_tick_time = Default::default();//maybe the update come from hold update
         Box::new(move |stream_api| {
-            let is_finished = if stream_api.tick_data.t > last_update_tick_time {
-                last_update_tick_time = stream_api.tick_data.t;
+            let is_finished = if stream_api.tick_data.date_time > last_update_tick_time {
+                last_update_tick_time = stream_api.tick_data.date_time;
                 update_tick_fn(stream_api.tick_data, &mut di.pcon.price).into()
             } else {
                 false

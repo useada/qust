@@ -107,7 +107,7 @@ impl GenDi {
 
     pub fn update_dil(&self, dil: &mut Dil) {
         dil.dil.iter_mut().for_each(|x| {
-            let max_time = x.pcon.price.t.last().unwrap().date();
+            let max_time = x.pcon.price.date_time.last().unwrap().date();
             let tick_data = self
                 .get_tick(x.pcon.ticker, (max_time + Duration::days(1)).after())
                 .unwrap();

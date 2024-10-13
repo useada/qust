@@ -173,29 +173,31 @@ impl IdxOut for PriceTick {
     fn idx_out(&self, idx: Idx) -> Self {
         match idx {
             Idx::Range(r) => PriceTick {
-                t: self.t[r.clone()].to_vec(),
-                c: self.c[r.clone()].to_vec(),
-                v: self.v[r.clone()].to_vec(),
-                ct: self.ct[r.clone()].to_vec(),
-                bid1: self.bid1[r.clone()].to_vec(),
-                ask1: self.ask1[r.clone()].to_vec(),
-                bid1_v: self.bid1_v[r.clone()].to_vec(),
-                ask1_v: self.ask1_v[r].to_vec(),
+                date_time: self.date_time[r.clone()].to_vec(),
+                last_price: self.last_price[r.clone()].to_vec(),
+                last_volume: self.last_volume[r.clone()].to_vec(),
+                last_amount: self.last_amount[r.clone()].to_vec(),
+                contract: self.contract[r.clone()].to_vec(),
+                bid_price1: self.bid_price1[r.clone()].to_vec(),
+                ask_price1: self.ask_price1[r.clone()].to_vec(),
+                bid_volume1: self.bid_volume1[r.clone()].to_vec(),
+                ask_volume1: self.ask_volume1[r].to_vec(),
             },
             Idx::List(v) => PriceTick {
-                t: self.t.get_list_index(&v),
-                c: self.c.get_list_index(&v),
-                v: self.v.get_list_index(&v),
-                ct: self.ct.get_list_index(&v),
-                bid1: self.bid1.get_list_index(&v),
-                ask1: self.ask1.get_list_index(&v),
-                bid1_v: self.bid1_v.get_list_index(&v),
-                ask1_v: self.ask1_v.get_list_index(&v),
+                date_time: self.date_time.get_list_index(&v),
+                last_price: self.last_price.get_list_index(&v),
+                last_volume: self.last_volume.get_list_index(&v),
+                last_amount: self.last_amount.get_list_index(&v),
+                contract: self.contract.get_list_index(&v),
+                bid_price1: self.bid_price1.get_list_index(&v),
+                ask_price1: self.ask_price1.get_list_index(&v),
+                bid_volume1: self.bid_volume1.get_list_index(&v),
+                ask_volume1: self.ask_volume1.get_list_index(&v),
             },
         }
     }
     fn get_time_vec(&self) -> Cow<'_, Vec<dt>> {
-        Cow::Borrowed(&self.t)
+        Cow::Borrowed(&self.date_time)
     }
 }
 
@@ -203,15 +205,16 @@ impl IdxOut for PriceOri {
     fn idx_out(&self, idx: Idx) -> Self {
         match idx {
             Idx::Range(r) => PriceOri {
-                t: self.t[r.clone()].to_vec(),
-                o: self.o[r.clone()].to_vec(),
-                h: self.h[r.clone()].to_vec(),
-                l: self.l[r.clone()].to_vec(),
-                c: self.c[r.clone()].to_vec(),
-                v: self.v[r.clone()].to_vec(),
+                date_time: self.date_time[r.clone()].to_vec(),
+                open: self.open[r.clone()].to_vec(),
+                high: self.high[r.clone()].to_vec(),
+                low: self.low[r.clone()].to_vec(),
+                close: self.close[r.clone()].to_vec(),
+                volume: self.volume[r.clone()].to_vec(),
+                amount: self.amount[r.clone()].to_vec(),
                 ki: self.ki[r.clone()].to_vec(),
                 immut_info: {
-                    if self.immut_info.len() < self.t.len() {
+                    if self.immut_info.len() < self.date_time.len() {
                         self.immut_info.clone()
                     } else {
                         self.immut_info[r.clone()].to_vec()
@@ -219,15 +222,16 @@ impl IdxOut for PriceOri {
                 },
             },
             Idx::List(v) => PriceOri {
-                t: self.t.get_list_index(&v).to_vec(),
-                o: self.o.get_list_index(&v).to_vec(),
-                h: self.h.get_list_index(&v).to_vec(),
-                l: self.l.get_list_index(&v).to_vec(),
-                c: self.c.get_list_index(&v).to_vec(),
-                v: self.v.get_list_index(&v).to_vec(),
+                date_time: self.date_time.get_list_index(&v).to_vec(),
+                open: self.open.get_list_index(&v).to_vec(),
+                high: self.high.get_list_index(&v).to_vec(),
+                low: self.low.get_list_index(&v).to_vec(),
+                close: self.close.get_list_index(&v).to_vec(),
+                volume: self.volume.get_list_index(&v).to_vec(),
+                amount: self.amount.get_list_index(&v).to_vec(),
                 ki: self.ki.get_list_index(&v).to_vec(),
                 immut_info: {
-                    if self.immut_info.len() < self.t.len() {
+                    if self.immut_info.len() < self.date_time.len() {
                         self.immut_info.clone()
                     } else {
                         self.immut_info.get_list_index(&v)
@@ -237,7 +241,7 @@ impl IdxOut for PriceOri {
         }
     }
     fn get_time_vec(&self) -> Cow<'_, Vec<dt>> {
-        Cow::Borrowed(&self.t)
+        Cow::Borrowed(&self.date_time)
     }
 }
 
@@ -477,17 +481,17 @@ impl<T> HasLen for [T] {
 }
 impl HasLen for PriceTick {
     fn size(&self) -> usize {
-        self.t.size()
+        self.date_time.size()
     }
 }
 impl HasLen for PriceOri {
     fn size(&self) -> usize {
-        self.t.size()
+        self.date_time.size()
     }
 }
 impl HasLen for PriceArc {
     fn size(&self) -> usize {
-        self.t.size()
+        self.date_time.size()
     }
 }
 impl HasLen for Di {

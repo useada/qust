@@ -25,9 +25,9 @@ impl Di {
             .unwrap()
             .ptm_res;
         let pnl_res_pre_info = PnlResPreInfo {
-            c: self.c(),
+            c: self.close(),
             ticker: self.pcon.ticker,
-            t: self.t().to_vec(),
+            t: self.date_time().to_vec(),
             profit: self.profit(),
             comm,
             pass_num: self.pcon.price.ki.iter().skip(1).map(|ki| ((ki.pass_last + ki.pass_this) as f32 / 120.)).collect_vec(),

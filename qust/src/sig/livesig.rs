@@ -61,7 +61,7 @@ impl LiveSig for Tsig {
     fn update(&self, di: &Di, data: &RwLock<(HashSet<OpenIng>, TsigRes)>) {
         match self {
             Tsig::Tsig(o_dire, e_dire, o_sig, e_sig) => {
-                let time_vec = di.t();
+                let time_vec = di.date_time();
                 let o_fn = o_sig.cond(di);
                 let e_fn = e_sig.cond(di);
                 let mut data = data.write().unwrap();

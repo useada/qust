@@ -41,7 +41,7 @@ impl IntoStatusVec for DiStral<'_> {
         let mut ptm_res_vec = self.calc(|distra: &DiStra| {
             (
                 distra.stra.ident.ticker,
-                distra.di.t(),
+                distra.di.date_time(),
                 distra
                     .di
                     .calc(&distra.stra.ptm)
@@ -51,7 +51,7 @@ impl IntoStatusVec for DiStral<'_> {
                     .unwrap()
                     .0
                     .clone(),
-                distra.di.c(),
+                distra.di.close(),
             )
         });
         ptm_res_vec.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());

@@ -9,7 +9,7 @@ use ctp_futures::{ TThostFtdcClientSystemInfoType};
 use futures::{StreamExt, executor::block_on};
 use super::config::CtpAccountConfig;
 use super::utiles::*;
-use super::api::{ApiConvert, CtpOrderAction, CtpQueryRes, OrderSendWithAcco};
+use super::api::{ApiConvert, CtpOrderAction, CtpQueryRes, OrderSendWithAccount};
 use super::type_bridge::*;
 use std::ffi::CStr;
 use std::path::PathBuf;
@@ -493,9 +493,9 @@ impl Ctp {
                 continue;
             }
             loge!(ticker, "ctp get a order_action_price notify: {:?}", order_send);
-            let mut order = OrderSendWithAcco {
+            let mut order = OrderSendWithAccount {
                 contract: &instrumentid,
-                invester_id: &self.ca.account,
+                investor_id: &self.ca.account,
                 order_input: order_send.clone(),
                 broker_id: self.ca.broker_id.as_str(),
                 account: self.ca.account.as_str(),
@@ -531,7 +531,7 @@ impl CtpApi {
             contract_ticker_map,
             ..Default::default()
         };
-        let ctp = Ctp::new("./data", &account, query_res).pip(Arc::new);
+        let ctp = Ctp::new("./ctp-cache", &account, query_res).pip(Arc::new);
         CtpApi { ctp }
     }
 

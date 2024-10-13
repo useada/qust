@@ -180,9 +180,9 @@ impl IntoDf for PriceOri {
     type Value = Vec<f32>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
-            self.t.to_index(),
-            [&self.o, &self.h, &self.l, &self.c, &self.v].to_value(),
-            vec!["o", "h", "l", "c", "v"],
+            self.date_time.to_index(),
+            [&self.open, &self.high, &self.low, &self.close, &self.volume, &self.amount].to_value(),
+            vec!["open", "high", "low", "close", "volume", "amount"],
         ).to_df()
     }
 }
@@ -191,10 +191,10 @@ impl IntoDf for PriceTick {
     type Value = Vec<f32>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
-            self.t.to_index(),
-            [&self.c, &self.v, &self.ask1, &self.bid1, 
-            &self.ask1_v, &self.bid1_v, &self.ct.map(|x| *x as f32)].to_value(),
-            vec!["c", "v", "ask1", "bid1", "ask1_v", "bid1_v", "ct"],
+            self.date_time.to_index(),
+            [&self.last_price, &self.last_volume, &self.last_amount, &self.ask_price1, &self.bid_price1,
+            &self.ask_volume1, &self.bid_volume1, &self.contract.map(|x| *x as f32)].to_value(),
+            vec!["last_price", "last_volume", "last_amount", "ask_price1", "bid_price1", "ask_volume1", "bid_volume1", "contract"],
         ).to_df()
     }
 }
@@ -319,9 +319,9 @@ impl IntoDf for WithDi<'_, Pms> {
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let pms_str = self.1.debug_string();
         let index = if pms_str.contains("FillCon") || pms_str.ends_with("ori"){
-            self.0.t().to_index()
+            self.0.date_time().to_index()
         } else {
-            self.0.calc(&self.1.dcon).t.to_index()
+            self.0.calc(&self.1.dcon).date_time.to_index()
         };
         (index, self.0.calc(self.1).to_value()).to_df()
     }
@@ -333,7 +333,7 @@ impl IntoDf for WithDi<'_, PnlRes<dt>> {
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let mut df = self.1.to_df();
         let pv = self.0.pcon.ticker.info().pv;
-        let num = izip!(df.value[2].iter(), self.0.c().iter())
+        let num = izip!(df.value[2].iter(), self.0.close().iter())
             .map(|(x, y)| 1000. * x / y / pv)
             .collect_vec();
         df.value.push(num);
@@ -457,7 +457,7 @@ impl IntoDf for Aee<Aee<PriceOri>> {
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let add_cols = self.0.0.immut_info
             .iter()
-            .fold(init_a_matrix(self.0.0.t.len(), self.0.0.immut_info[0].len()), |mut accu, x| {
+            .fold(init_a_matrix(self.0.0.date_time.len(), self.0.0.immut_info[0].len()), |mut accu, x| {
                 let x_ = x.map(|x| x.debug_string());
                 izip!(accu.iter_mut(), x_.into_iter())
                     .for_each(|(x, y)| {

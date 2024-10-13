@@ -22,17 +22,18 @@ pub trait GetInstrumentID {
 impl ApiConvert<DataReceive> for DepthMarketDataField {
     fn api_convert(self) -> DataReceive {
         TickData {
-            t: {
+            date_time: {
                 let c = format!("{} {}.{}", self.TradingDay.to_str_0(), self.UpdateTime.to_str_0(), self.UpdateMillisec);
                 dt::parse_from_str(&c, "%Y%m%d %H:%M:%S%.f").expect(&c)
             },
-            c     : self.LastPrice as f32,
-            v     : self.Volume as f32,
-            bid1  : self.BidPrice1 as f32,
-            ask1  : self.AskPrice1 as f32,
-            bid1_v: self.BidVolume1 as f32,
-            ask1_v: self.AskVolume1 as f32,
-            ct    : 0,
+            last_price: self.LastPrice as f32,
+            last_volume: self.Volume as f32,
+            last_amount: self.Turnover as f32,
+            bid_price1: self.BidPrice1 as f32,
+            ask_price1: self.AskPrice1 as f32,
+            bid_volume1: self.BidVolume1 as f32,
+            ask_volume1: self.AskVolume1 as f32,
+            contract: 0,
         }.into()
     }
 }
@@ -43,11 +44,11 @@ impl GetInstrumentID for DepthMarketDataField {
     }
 }
 
-pub struct OrderSendWithAcco<'a> {
+pub struct OrderSendWithAccount<'a> {
     pub contract: &'a IstmId,
     pub order_input: OrderSend,
     pub broker_id: &'a str,
-    pub invester_id: &'a str,
+    pub investor_id: &'a str,
     pub account: &'a str,
 }
 
@@ -57,14 +58,14 @@ pub enum CtpOrderAction {
     CancelOrder(InputOrderActionField),
 }
 
-impl ApiConvert<CtpOrderAction> for OrderSendWithAcco<'_> {
+impl ApiConvert<CtpOrderAction> for OrderSendWithAccount<'_> {
     fn api_convert(self) -> CtpOrderAction {
         use OrderAction::*;
         match self.order_input.is_to_cancel {
             false => {
                 let mut req = InputOrderField::default();
                 set_cstr_from_str_truncate_i8(&mut req.BrokerID, self.broker_id);
-                set_cstr_from_str_truncate_i8(&mut req.InvestorID, self.invester_id);
+                set_cstr_from_str_truncate_i8(&mut req.InvestorID, self.investor_id);
                 // set_cstr_from_str_truncate_i8(&mut req.OrderRef, &self.order_input.id);
                 set_cstr_from_str_truncate_i8(&mut req.InvestUnitID, &self.order_input.id);
                 req.InstrumentID = *self.contract;
@@ -92,7 +93,7 @@ impl ApiConvert<CtpOrderAction> for OrderSendWithAcco<'_> {
             true => {
                 let mut req = InputOrderActionField::default();
                 set_cstr_from_str_truncate_i8(&mut req.BrokerID, self.broker_id);
-                set_cstr_from_str_truncate_i8(&mut req.InvestorID, self.invester_id);
+                set_cstr_from_str_truncate_i8(&mut req.InvestorID, self.investor_id);
                 // set_cstr_from_str_truncate_i8(&mut req.OrderRef, &self.order_input.id);
                 set_cstr_from_str_truncate_i8(&mut req.InvestUnitID, &self.order_input.id);
                 req.InstrumentID = *self.contract;

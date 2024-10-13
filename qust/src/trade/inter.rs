@@ -8,25 +8,27 @@ use std::fmt::Debug;
 
 #[derive(Debug, Clone, Default)]
 pub struct KlineData {
-    pub t: dt,
-    pub o: f32,
-    pub h: f32,
-    pub l: f32,
-    pub c: f32,
-    pub v: f32,
+    pub date_time: dt,
+    pub open: f32,
+    pub high: f32,
+    pub low: f32,
+    pub close: f32,
+    pub volume: f32,
+    pub amount: f32,
     pub ki: KlineInfo,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TickData {
-    pub t: dt,
-    pub c: f32,
-    pub v: f32,
-    pub bid1: f32,
-    pub ask1: f32,
-    pub bid1_v: f32,
-    pub ask1_v: f32,
-    pub ct: i32,
+    pub date_time: dt,
+    pub last_price: f32,
+    pub last_volume: f32,
+    pub last_amount: f32,
+    pub bid_price1: f32,
+    pub ask_price1: f32,
+    pub bid_volume1: f32,
+    pub ask_volume1: f32,
+    pub contract: i32,
 }
 
 #[derive(Default)]
@@ -55,23 +57,25 @@ pub trait UpdateData<T> {
 
 impl UpdateData<TickData> for KlineData {
     fn update_begin(&mut self, data: &TickData) {
-        self.t = data.t;
-        self.o = data.c;
-        self.h = data.c;
-        self.l = data.c;
-        self.c = data.c;
-        self.v = data.v;
-        self.ki.open_time = data.t;
+        self.date_time = data.date_time;
+        self.open = data.last_price;
+        self.high = data.last_price;
+        self.low = data.last_price;
+        self.close = data.last_price;
+        self.volume = data.last_volume;
+        self.amount = data.last_amount;
+        self.ki.open_time = data.date_time;
         self.ki.pass_this = 1;
-        self.ki.contract = data.ct;
+        self.ki.contract = data.contract;
     }
 
     fn update_merging(&mut self, data: &TickData) {
-        self.t = data.t;
-        self.h = self.h.max(data.c);
-        self.l = self.l.min(data.c);
-        self.c = data.c;
-        self.v += data.v;
+        self.date_time = data.date_time;
+        self.high = self.high.max(data.last_price);
+        self.low = self.low.min(data.last_price);
+        self.close = data.last_price;
+        self.volume += data.last_volume;
+        self.amount += data.last_amount;
         self.ki.pass_this += 1;
     }
 
@@ -86,12 +90,12 @@ impl UpdateData<TickData> for KlineData {
 
 impl UpdateData<KlineData> for KlineData {
     fn update_begin(&mut self, data: &KlineData) {
-        self.t = data.t;
-        self.o = data.o;
-        self.h = data.h;
-        self.l = data.l;
-        self.c = data.c;
-        self.v = data.v;
+        self.date_time = data.date_time;
+        self.open = data.open;
+        self.high = data.high;
+        self.low = data.low;
+        self.close = data.close;
+        self.volume = data.volume;
         self.ki.open_time = data.ki.open_time;
         self.ki.pass_this = data.ki.pass_this;
         self.ki.contract = data.ki.contract;
@@ -99,11 +103,11 @@ impl UpdateData<KlineData> for KlineData {
     }
 
     fn update_merging(&mut self, data: &KlineData) {
-        self.t = data.t;
-        self.h = self.h.max(data.h);
-        self.l = self.l.min(data.l);
-        self.c = data.c;
-        self.v += data.v;
+        self.date_time = data.date_time;
+        self.high = self.high.max(data.high);
+        self.low = self.low.min(data.low);
+        self.close = data.close;
+        self.volume += data.volume;
         self.ki.pass_this += data.ki.pass_last + data.ki.pass_this;
     }
     fn update_ignor(&mut self, data: &KlineData) {
@@ -150,32 +154,34 @@ impl KlineWithState {
 
 impl PriceOri {
     pub fn update(&mut self, data: &KlineData) {
-        self.t.push(data.t);
-        self.o.push(data.o);
-        self.h.push(data.h);
-        self.l.push(data.l);
-        self.c.push(data.c);
-        self.v.push(data.v);
+        self.date_time.push(data.date_time);
+        self.open.push(data.open);
+        self.high.push(data.high);
+        self.low.push(data.low);
+        self.close.push(data.close);
+        self.volume.push(data.volume);
         self.ki.push(data.ki.clone());
     }
 
     pub fn to_kline_data(&self) -> Vec<KlineData> {
         izip!(
-            self.t.iter(),
-            self.o.iter(),
-            self.h.iter(),
-            self.l.iter(),
-            self.c.iter(),
-            self.v.iter(),
+            self.date_time.iter(),
+            self.open.iter(),
+            self.high.iter(),
+            self.low.iter(),
+            self.close.iter(),
+            self.volume.iter(),
+            self.amount.iter(),
             self.ki.iter(),
         )
-        .map(|(&t, &o, &h, &l, &c, &v, ki)| KlineData {
-            t,
-            o,
-            h,
-            l,
-            c,
-            v,
+        .map(|(&date_time, &open, &high, &low, &close, &volume, &amount, ki)| KlineData {
+            date_time,
+            open,
+            high,
+            low,
+            close,
+            volume,
+            amount,
             ki: ki.clone(),
         })
         .collect_vec()
@@ -184,37 +190,40 @@ impl PriceOri {
 
 impl PriceTick {
     pub fn update(&mut self, data: &TickData) {
-        self.t.push(data.t);
-        self.c.push(data.c);
-        self.v.push(data.v);
-        self.bid1.push(data.bid1);
-        self.ask1.push(data.ask1);
-        self.bid1_v.push(data.bid1_v);
-        self.ask1_v.push(data.ask1_v);
-        self.ct.push(data.ct);
+        self.date_time.push(data.date_time);
+        self.last_price.push(data.last_price);
+        self.last_volume.push(data.last_volume);
+        self.last_amount.push(data.last_amount);
+        self.bid_price1.push(data.bid_price1);
+        self.ask_price1.push(data.ask_price1);
+        self.bid_volume1.push(data.bid_volume1);
+        self.ask_volume1.push(data.ask_volume1);
+        self.contract.push(data.contract);
     }
 
     pub fn to_tick_data(&self) -> Vec<TickData> {
         izip!(
-            self.t.iter(),
-            self.c.iter(),
-            self.v.iter(),
-            self.bid1.iter(),
-            self.ask1.iter(),
-            self.bid1_v.iter(),
-            self.ask1_v.iter(),
-            self.ct.iter(),
+            self.date_time.iter(),
+            self.last_price.iter(),
+            self.last_volume.iter(),
+            self.last_amount.iter(),
+            self.bid_price1.iter(),
+            self.ask_price1.iter(),
+            self.bid_volume1.iter(),
+            self.ask_volume1.iter(),
+            self.contract.iter(),
         )
         .map(
-            |(&t, &c, &v, &bid1, &ask1, &bid1_v, &ask1_v, &ct)| TickData {
-                t,
-                c,
-                v,
-                bid1,
-                ask1,
-                bid1_v,
-                ask1_v,
-                ct,
+            |(&date_time, &last_price, &last_volume, &last_amount, &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract)| TickData {
+                date_time,
+                last_price,
+                last_volume,
+                last_amount,
+                bid_price1,
+                ask_price1,
+                bid_volume1,
+                ask_volume1,
+                contract,
             },
         )
         .collect_vec()
@@ -311,7 +320,7 @@ impl Interval {
 #[clone_trait]
 pub trait Tri {
     fn gen_price_ori(&self, price_tick: &PriceTick) -> PriceOri {
-        let num_days = (price_tick.t.last().unwrap().date() - price_tick.t.first().unwrap().date())
+        let num_days = (price_tick.date_time.last().unwrap().date() - price_tick.date_time.first().unwrap().date())
             .num_days() as usize;
         PriceOri::with_capacity(num_days * 50)
     }
@@ -323,7 +332,7 @@ pub trait Tri {
 #[clone_trait]
 pub trait Pri {
     fn gen_price_ori(&self, price_tick: &PriceArc) -> PriceOri {
-        let num_days = (price_tick.t.last().unwrap().date() - price_tick.t.first().unwrap().date())
+        let num_days = (price_tick.date_time.last().unwrap().date() - price_tick.date_time.first().unwrap().date())
             .num_days() as usize;
         PriceOri::with_capacity(num_days * 50)
     }
@@ -342,14 +351,14 @@ pub struct KlineStateInter {
 
 impl UpdateDataState<TickData> for KlineStateInter {
     fn update(&mut self, data: &TickData) {
-        self.kline_state.current = self.check_datetime(&data.t);
+        self.kline_state.current = self.check_datetime(&data.date_time);
         self.kline_state.update(data);
     }
 }
 
 impl UpdateDataState<KlineData> for KlineStateInter {
     fn update(&mut self, data: &KlineData) {
-        self.kline_state.current = self.check_datetime(&data.t);
+        self.kline_state.current = self.check_datetime(&data.date_time);
         self.kline_state.update(data);
     }
 }

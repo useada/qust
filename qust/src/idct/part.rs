@@ -125,11 +125,11 @@ impl Part {
     fn cut_index(&self, di: &Di) -> vuz {
         match *self {
             Part::oos => {
-                let time_vec = di.t();
+                let time_vec = di.date_time();
                 find_day_index_night_pro(&time_vec, di)
             }
             Part::ono => {
-                vec![0, di.t().len()]
+                vec![0, di.date_time().len()]
             }
         }
     }

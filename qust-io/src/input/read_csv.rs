@@ -14,24 +14,26 @@ pub trait ReadCsv {
 }
 
 pub struct DiReader<T> {
-    pub t: T,
-    pub o: T,
-    pub h: T,
-    pub l: T,
-    pub c: T,
-    pub v: T,
-    pub t_format: Option<&'static str>,
+    pub date_time: T,
+    pub open: T,
+    pub high: T,
+    pub low: T,
+    pub close: T,
+    pub volume: T,
+    pub amount: T,
+    pub date_time_format: Option<&'static str>,
     pub has_header: bool,
 }
 
 struct DiReaderRecord {
-    t: usize,
-    o: usize,
-    h: usize,
-    l: usize,
-    c: usize,
-    v: usize,
-    t_format: &'static str,
+    date_time: usize,
+    open: usize,
+    high: usize,
+    low: usize,
+    close: usize,
+    volume: usize,
+    amount: usize,
+    date_time_format: &'static str,
 }
 
 
@@ -39,16 +41,17 @@ impl ReadRecord for DiReaderRecord {
     type Output = KlineData;
     fn read_record(&self, record: &StringRecord) -> Self::Output {
         KlineData {
-            t: {
-                let t = record[self.t].trim();
-                dt::parse_from_str(t, self.t_format)
-                    .unwrap_or_else(|_| panic!("failed to parse time, provided: {}, format: {}", t, self.t_format))
+            date_time: {
+                let t = record[self.date_time].trim();
+                dt::parse_from_str(t, self.date_time_format)
+                    .unwrap_or_else(|_| panic!("failed to parse time, provided: {}, format: {}", t, self.date_time_format))
             },
-            o: record[self.o].trim().parse().unwrap(),
-            h: record[self.h].trim().parse().unwrap(),
-            l: record[self.l].trim().parse().unwrap(),
-            c: record[self.c].trim().parse().unwrap(),
-            v: record[self.v].trim().parse().unwrap(),
+            open: record[self.open].trim().parse().unwrap(),
+            high: record[self.high].trim().parse().unwrap(),
+            low: record[self.low].trim().parse().unwrap(),
+            close: record[self.close].trim().parse().unwrap(),
+            volume: record[self.volume].trim().parse().unwrap(),
+            amount: record[self.amount].trim().parse().unwrap(),
             ki: Default::default(),
         }
     }
@@ -59,13 +62,14 @@ impl ReadCsv for DiReader<usize> {
     type Output = PriceOri;
     async fn read_csv(&self, path: &str) -> Self::Output {
         let di_reader_record = DiReaderRecord {
-            t: self.t,
-            o: self.o,
-            h: self.h,
-            l: self.l,
-            c: self.c,
-            v: self.v,
-            t_format: self.t_format.unwrap_or("%Y-%m-%dT%H:%M:%S%.f"),
+            date_time: self.date_time,
+            open: self.open,
+            high: self.high,
+            low: self.low,
+            close: self.close,
+            volume: self.volume,
+            amount: self.amount,
+            date_time_format: self.date_time_format.unwrap_or("%Y-%m-%dT%H:%M:%S%.f"),
         };
         let skip_n = if self.has_header { 1 } else { 0 };
         let mut price_ori = PriceOri::with_capacity(100_000);
@@ -93,44 +97,47 @@ impl ReadCsv for DiReader<usize> {
 }
 
 pub struct TickReader<T> {
-    pub t: T,
-    pub c: T,
-    pub v: T,
-    pub ask1: T,
-    pub bid1: T,
-    pub ask1_v: T,
-    pub bid1_v: T,
-    pub t_format: Option<&'static str>,
+    pub date_time: T,
+    pub last_price: T,
+    pub last_volume: T,
+    pub last_amount: T,
+    pub ask_price1: T,
+    pub bid_price1: T,
+    pub ask_volume1: T,
+    pub bid_volume1: T,
+    pub date_time_format: Option<&'static str>,
     pub has_header: bool,
 }
 
 struct TickReaderRecord {
-    t: usize,
-    c: usize,
-    v: usize,
-    ask1: usize,
-    bid1: usize,
-    ask1_v: usize,
-    bid1_v: usize,
-    t_format: &'static str,
+    date_time: usize,
+    last_price: usize,
+    last_volume: usize,
+    last_amount: usize,
+    ask_price1: usize,
+    bid_price1: usize,
+    ask_volume1: usize,
+    bid_volume1: usize,
+    date_time_format: &'static str,
 }
 
 impl ReadRecord for TickReaderRecord {
     type Output = TickData;
     fn read_record(&self, record: &StringRecord) -> Self::Output {
         TickData {
-            t: {
-                let t = record[self.t].trim();
-                dt::parse_from_str(t, self.t_format)
-                    .unwrap_or_else(|_| panic!("failed to parse time, provided: {}, format: {}", t, self.t_format))
+            date_time: {
+                let t = record[self.date_time].trim();
+                dt::parse_from_str(t, self.date_time_format)
+                    .unwrap_or_else(|_| panic!("failed to parse time, provided: {}, format: {}", t, self.date_time_format))
             },
-            c: record[self.c].trim().parse().unwrap(),
-            v: record[self.v].trim().parse().unwrap(),
-            ask1: record[self.ask1].trim().parse().unwrap(),
-            bid1: record[self.bid1].trim().parse().unwrap(),
-            ask1_v: record[self.ask1_v].trim().parse().unwrap(),
-            bid1_v: record[self.bid1_v].trim().parse().unwrap(),
-            ct: 1,
+            last_price: record[self.last_price].trim().parse().unwrap(),
+            last_volume: record[self.last_volume].trim().parse().unwrap(),
+            last_amount: record[self.last_amount].trim().parse().unwrap(),
+            ask_price1: record[self.ask_price1].trim().parse().unwrap(),
+            bid_price1: record[self.bid_price1].trim().parse().unwrap(),
+            ask_volume1: record[self.ask_volume1].trim().parse().unwrap(),
+            bid_volume1: record[self.bid_volume1].trim().parse().unwrap(),
+            contract: 1,
         }
 
     }
@@ -141,14 +148,15 @@ impl ReadCsv for TickReader<usize> {
     type Output = Vec<TickData>;
     async fn read_csv(&self, path: &str) -> Self::Output {
         let tick_reader_record = TickReaderRecord {
-            t: self.t,
-            c: self.c,
-            v: self.v,
-            ask1: self.ask1,
-            bid1: self.bid1,
-            ask1_v: self.ask1_v,
-            bid1_v: self.bid1_v,
-            t_format: self.t_format.unwrap_or("%Y-%m-%dT%H:%M:%S%.f"),
+            date_time: self.date_time,
+            last_price: self.last_price,
+            last_volume: self.last_volume,
+            last_amount: self.last_amount,
+            ask_price1: self.ask_price1,
+            bid_price1: self.bid_price1,
+            ask_volume1: self.ask_volume1,
+            bid_volume1: self.bid_volume1,
+            date_time_format: self.date_time_format.unwrap_or("%Y-%m-%dT%H:%M:%S%.f"),
         };
         let mut res = Vec::with_capacity(100000);
         if path.contains("https") {
@@ -174,36 +182,38 @@ impl ReadCsv for TickReader<usize> {
     }
 }
 
-const remote_kline_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/kline_data.csv";
-const remote_tick_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/tick_data.csv"; 
+// const remote_kline_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/kline_data.csv";
+// const remote_tick_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/tick_data.csv";
 
-pub async fn read_remote_kline_data() -> Di {
+pub async fn read_kline_data(file_path: &str) -> Di {
     let di_reader: DiReader<usize> = DiReader {
-        t: 0,
-        o: 1,
-        h: 2,
-        l: 3,
-        c: 4,
-        v: 5,
-        t_format: None,
+        date_time: 0,
+        open: 1,
+        high: 2,
+        low: 3,
+        close: 4,
+        volume: 5,
+        amount: 6,
+        date_time_format: None,
         has_header: true,
     };
-    di_reader.read_csv(remote_kline_url).await.to_di(qust::prelude::aler, qust::prelude::rl5m.tri_box())
+    di_reader.read_csv(file_path).await.to_di(qust::prelude::aler, qust::prelude::rl5m.tri_box())
 }
 
-pub async fn read_remote_tick_data() -> Vec<TickData> {
+pub async fn read_tick_data(file_path: &str) -> Vec<TickData> {
     let tick_reader = TickReader {
-        t: 0,
-        c: 1,
-        v: 2,
-        ask1: 3,
-        bid1: 4,
-        ask1_v: 5,
-        bid1_v: 6,
-        t_format: None,
+        date_time: 0,
+        last_price: 1,
+        last_volume: 2,
+        last_amount: 3,
+        ask_price1: 4,
+        bid_price1: 5,
+        ask_volume1: 6,
+        bid_volume1: 7,
+        date_time_format: None,
         has_header:true,
     };
     tick_reader
-        .read_csv(remote_tick_url)
+        .read_csv(file_path)
         .await
 }

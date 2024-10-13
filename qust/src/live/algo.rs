@@ -28,28 +28,28 @@ impl Algo for TargetSimple {
             let gap = target - hold_local.sum();
             match (gap, target, hold_local.yd_sh, hold_local.yd_lo, hold_local.td_sh, hold_local.td_lo) {
                 (0, ..) => No,
-                (_, 0.., 1.., ..) => LoCloseYd(hold_local.yd_sh, tick_data.bid1),
-                (_, 0.., 0, _, 1.., _) => LoClose(hold_local.td_sh, tick_data.bid1),
-                (0.., 0.., 0, _, 0, _) => LoOpen(gap, tick_data.bid1),
+                (_, 0.., 1.., ..) => LoCloseYd(hold_local.yd_sh, tick_data.bid_price1),
+                (_, 0.., 0, _, 1.., _) => LoClose(hold_local.td_sh, tick_data.bid_price1),
+                (0.., 0.., 0, _, 0, _) => LoOpen(gap, tick_data.bid_price1),
                 (..=-1, 0.., 0, 1.., 0, 0..) => {
                     if hold_local.yd_lo >= -gap {
-                        ShCloseYd(-gap, tick_data.ask1)
+                        ShCloseYd(-gap, tick_data.ask_price1)
                     } else {
-                        ShCloseYd(hold_local.yd_lo, tick_data.ask1)
+                        ShCloseYd(hold_local.yd_lo, tick_data.ask_price1)
                     }
                 }
-                (..=-1, 0.., 0, 0, 0, 1..) => ShClose(-gap, tick_data.ask1),
-                (_, ..=-1, _, 1.., ..) => ShCloseYd(hold_local.yd_lo, tick_data.ask1),
-                (_, ..=-1, _, 0, _, 1..) => ShClose(hold_local.td_lo, tick_data.ask1),
-                (..=-1, ..=-1, _, 0, _, 0) => ShOpen(-gap, tick_data.ask1),
+                (..=-1, 0.., 0, 0, 0, 1..) => ShClose(-gap, tick_data.ask_price1),
+                (_, ..=-1, _, 1.., ..) => ShCloseYd(hold_local.yd_lo, tick_data.ask_price1),
+                (_, ..=-1, _, 0, _, 1..) => ShClose(hold_local.td_lo, tick_data.ask_price1),
+                (..=-1, ..=-1, _, 0, _, 0) => ShOpen(-gap, tick_data.ask_price1),
                 (0.., ..=-1, 1.., 0, 0.., 0) => {
                     if hold_local.yd_sh >= gap {
-                        LoCloseYd(gap, tick_data.bid1)
+                        LoCloseYd(gap, tick_data.bid_price1)
                     } else {
-                        LoCloseYd(hold_local.yd_sh, tick_data.bid1)
+                        LoCloseYd(hold_local.yd_sh, tick_data.bid_price1)
                     }
                 }
-                (0.., ..=-1, 0, 0, 1.., 0) => LoClose(gap, tick_data.bid1),
+                (0.., ..=-1, 0, 0, 1.., 0) => LoClose(gap, tick_data.bid_price1),
                 _ => panic!("something action wrong"),
             }
         })

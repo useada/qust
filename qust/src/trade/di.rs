@@ -9,77 +9,83 @@ pub struct PriceTick {
         serialize_with = "serialize_vec_dt",
         deserialize_with = "deserialize_vec_dt"
     )]
-    pub t: vdt,
-    pub c: v32,
-    pub v: v32,
-    pub ct: Vec<i32>,
-    pub bid1: v32,
-    pub ask1: v32,
-    pub bid1_v: v32,
-    pub ask1_v: v32,
+    pub date_time: vdt,
+    pub last_price: v32,
+    pub last_volume: v32,
+    pub last_amount: v32,
+    pub contract: Vec<i32>,
+    pub bid_price1: v32,
+    pub ask_price1: v32,
+    pub bid_volume1: v32,
+    pub ask_volume1: v32,
 }
 
 impl PriceTick {
     pub fn with_capacity(i: usize) -> Self {
         Self {
-            t: Vec::with_capacity(i),
-            c: Vec::with_capacity(i),
-            v: Vec::with_capacity(i),
-            ct: Vec::with_capacity(i),
-            bid1: Vec::with_capacity(i),
-            ask1: Vec::with_capacity(i),
-            bid1_v: Vec::with_capacity(i),
-            ask1_v: Vec::with_capacity(i),
+            date_time: Vec::with_capacity(i),
+            last_price: Vec::with_capacity(i),
+            last_volume: Vec::with_capacity(i),
+            last_amount: Vec::with_capacity(i),
+            contract: Vec::with_capacity(i),
+            bid_price1: Vec::with_capacity(i),
+            ask_price1: Vec::with_capacity(i),
+            bid_volume1: Vec::with_capacity(i),
+            ask_volume1: Vec::with_capacity(i),
         }
     }
 
     pub fn shrink_to_fit(&mut self) {
-        self.t.shrink_to_fit();
-        self.c.shrink_to_fit();
-        self.v.shrink_to_fit();
-        self.ct.shrink_to_fit();
-        self.bid1.shrink_to_fit();
-        self.ask1.shrink_to_fit();
-        self.bid1_v.shrink_to_fit();
-        self.ask1_v.shrink_to_fit();
+        self.date_time.shrink_to_fit();
+        self.last_price.shrink_to_fit();
+        self.last_volume.shrink_to_fit();
+        self.last_amount.shrink_to_fit();
+        self.contract.shrink_to_fit();
+        self.bid_price1.shrink_to_fit();
+        self.ask_price1.shrink_to_fit();
+        self.bid_volume1.shrink_to_fit();
+        self.ask_volume1.shrink_to_fit();
     }
 
     pub fn cat(&mut self, price: &mut PriceTick) {
-        self.t.append(&mut price.t);
-        self.c.append(&mut price.c);
-        self.v.append(&mut price.v);
-        self.ct.append(&mut price.ct);
-        self.bid1.append(&mut price.bid1);
-        self.ask1.append(&mut price.ask1);
-        self.bid1_v.append(&mut price.bid1_v);
-        self.ask1_v.append(&mut price.ask1_v);
+        self.date_time.append(&mut price.date_time);
+        self.last_price.append(&mut price.last_price);
+        self.last_volume.append(&mut price.last_volume);
+        self.last_amount.append(&mut price.last_amount);
+        self.contract.append(&mut price.contract);
+        self.bid_price1.append(&mut price.bid_price1);
+        self.ask_price1.append(&mut price.ask_price1);
+        self.bid_volume1.append(&mut price.bid_volume1);
+        self.ask_volume1.append(&mut price.ask_volume1);
     }
 
     pub fn to_price_ori(&self, r: TriBox, ticker: Ticker) -> PriceOri {
-        if self.t.is_empty() {
+        if self.date_time.is_empty() {
             return PriceOri::with_capacity(0);
         }
         let mut price_ori = r.gen_price_ori(self);
         let mut f = r.update_tick_func(ticker);
-        for (&t, &c, &v, &bid1, &ask1, &bid1_v, &ask1_v, &ct) in izip!(
-            self.t.iter(),
-            self.c.iter(),
-            self.v.iter(),
-            self.bid1.iter(),
-            self.ask1.iter(),
-            self.bid1_v.iter(),
-            self.ask1_v.iter(),
-            self.ct.iter(),
+        for (&date_time, &last_price, &last_volume, &last_amount, &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract) in izip!(
+            self.date_time.iter(),
+            self.last_price.iter(),
+            self.last_volume.iter(),
+            self.last_amount.iter(),
+            self.bid_price1.iter(),
+            self.ask_price1.iter(),
+            self.bid_volume1.iter(),
+            self.ask_volume1.iter(),
+            self.contract.iter(),
         ) {
             let tick_data = TickData {
-                t,
-                c,
-                v,
-                bid1,
-                ask1,
-                bid1_v,
-                ask1_v,
-                ct,
+                date_time,
+                last_price,
+                last_volume,
+                last_amount,
+                bid_price1,
+                ask_price1,
+                bid_volume1,
+                ask_volume1,
+                contract,
             };
             f(&tick_data, &mut price_ori);
         }
@@ -109,12 +115,13 @@ pub struct PriceOri {
         serialize_with = "serialize_vec_dt",
         deserialize_with = "deserialize_vec_dt"
     )]
-    pub t: vdt,
-    pub o: v32,
-    pub h: v32,
-    pub l: v32,
-    pub c: v32,
-    pub v: v32,
+    pub date_time: vdt,
+    pub open: v32,
+    pub high: v32,
+    pub low: v32,
+    pub close: v32,
+    pub volume: v32,
+    pub amount: v32,
     pub ki: Vec<KlineInfo>,
     pub immut_info: Vec<vv32>,
 }
@@ -122,34 +129,37 @@ pub struct PriceOri {
 impl PriceOri {
     pub fn with_capacity(i: usize) -> Self {
         PriceOri {
-            t: Vec::with_capacity(i),
-            o: Vec::with_capacity(i),
-            h: Vec::with_capacity(i),
-            l: Vec::with_capacity(i),
-            c: Vec::with_capacity(i),
-            v: Vec::with_capacity(i),
+            date_time: Vec::with_capacity(i),
+            open: Vec::with_capacity(i),
+            high: Vec::with_capacity(i),
+            low: Vec::with_capacity(i),
+            close: Vec::with_capacity(i),
+            volume: Vec::with_capacity(i),
+            amount: Vec::with_capacity(i),
             ki: Vec::with_capacity(i),
             immut_info: Default::default(),
         }
     }
 
     pub fn shrink_to_fit(&mut self) {
-        self.t.shrink_to_fit();
-        self.o.shrink_to_fit();
-        self.h.shrink_to_fit();
-        self.l.shrink_to_fit();
-        self.c.shrink_to_fit();
-        self.v.shrink_to_fit();
+        self.date_time.shrink_to_fit();
+        self.open.shrink_to_fit();
+        self.high.shrink_to_fit();
+        self.low.shrink_to_fit();
+        self.close.shrink_to_fit();
+        self.volume.shrink_to_fit();
+        self.amount.shrink_to_fit();
         self.ki.shrink_to_fit();
     }
 
     pub fn cat(&mut self, price: &mut PriceOri) {
-        self.t.append(&mut price.t);
-        self.o.append(&mut price.o);
-        self.h.append(&mut price.h);
-        self.l.append(&mut price.l);
-        self.c.append(&mut price.c);
-        self.v.append(&mut price.v);
+        self.date_time.append(&mut price.date_time);
+        self.open.append(&mut price.open);
+        self.high.append(&mut price.high);
+        self.low.append(&mut price.low);
+        self.close.append(&mut price.close);
+        self.volume.append(&mut price.volume);
+        self.amount.append(&mut price.amount);
         self.ki.append(&mut price.ki);
     }
 
@@ -167,12 +177,13 @@ impl PriceOri {
 
 #[derive(Clone)]
 pub struct PriceArc {
-    pub t: avdt,
-    pub o: av32,
-    pub h: av32,
-    pub l: av32,
-    pub c: av32,
-    pub v: av32,
+    pub date_time: avdt,
+    pub open: av32,
+    pub high: av32,
+    pub low: av32,
+    pub close: av32,
+    pub volume: av32,
+    pub amount: av32,
     pub ki: Arc<Vec<KlineInfo>>,
     pub immut_info: Vec<Arc<vv32>>,
     pub finished: Option<Vec<KlineState>>,
@@ -181,12 +192,13 @@ pub struct PriceArc {
 impl PriceArc {
     pub fn to_price_ori(self) -> PriceOri {
         PriceOri {
-            t: self.t.to_vec(),
-            o: self.o.to_vec(),
-            h: self.h.to_vec(),
-            l: self.l.to_vec(),
-            c: self.c.to_vec(),
-            v: self.v.to_vec(),
+            date_time: self.date_time.to_vec(),
+            open: self.open.to_vec(),
+            high: self.high.to_vec(),
+            low: self.low.to_vec(),
+            close: self.close.to_vec(),
+            volume: self.volume.to_vec(),
+            amount: self.amount.to_vec(),
             ki: self.ki.to_vec(),
             immut_info: self
                 .immut_info
@@ -290,7 +302,7 @@ impl Clone for Di {
 
 impl Di {
     pub fn size(&self) -> usize {
-        self.pcon.price.t.len()
+        self.pcon.price.date_time.len()
     }
     pub fn last_dcon(&self) -> Convert {
         let dcon_vec = self.dcon.read().unwrap();
@@ -304,10 +316,10 @@ impl Di {
 
     pub fn get_kline(&self, p: &KlineType) -> av32 {
         match p {
-            KlineType::Open => self.o(),
-            KlineType::High => self.h(),
-            KlineType::Low => self.l(),
-            _ => self.c(),
+            KlineType::Open => self.open(),
+            KlineType::High => self.high(),
+            KlineType::Low => self.low(),
+            _ => self.close(),
         }
     }
 
@@ -317,33 +329,36 @@ impl Di {
         }
     }
 
-    pub fn t(&self) -> avdt {
-        self.calc(self.last_dcon()).t
+    pub fn date_time(&self) -> avdt {
+        self.calc(self.last_dcon()).date_time
     }
-    pub fn o(&self) -> av32 {
-        self.calc(self.last_dcon()).o
+    pub fn open(&self) -> av32 {
+        self.calc(self.last_dcon()).open
     }
-    pub fn h(&self) -> av32 {
-        self.calc(self.last_dcon()).h
+    pub fn high(&self) -> av32 {
+        self.calc(self.last_dcon()).high
     }
-    pub fn l(&self) -> av32 {
-        self.calc(self.last_dcon()).l
+    pub fn low(&self) -> av32 {
+        self.calc(self.last_dcon()).low
     }
-    pub fn c(&self) -> av32 {
-        self.calc(self.last_dcon()).c
+    pub fn close(&self) -> av32 {
+        self.calc(self.last_dcon()).close
     }
-    pub fn v(&self) -> av32 {
-        self.calc(self.last_dcon()).v
+    pub fn volume(&self) -> av32 {
+        self.calc(self.last_dcon()).volume
+    }
+    pub fn amount(&self) -> av32 {
+        self.calc(self.last_dcon()).amount
     }
     pub fn immut_info(&self) -> Vec<Arc<vv32>> {
         self.calc(self.last_dcon()).immut_info
     }
 
     pub fn len(&self) -> usize {
-        self.pcon.price.t.len()
+        self.pcon.price.date_time.len()
     }
     pub fn is_empty(&self) -> bool {
-        self.pcon.price.t.is_empty()
+        self.pcon.price.date_time.is_empty()
     }
 
     pub fn clear(&self) {
@@ -362,7 +377,7 @@ impl Di {
 
     pub fn tz_profit(&self) -> f32 {
         let tz = self.pcon.ticker.info().tz;
-        10000. * tz / self.pcon.price.c.last().unwrap()
+        10000. * tz / self.pcon.price.close.last().unwrap()
     }
 }
 
@@ -373,8 +388,8 @@ impl Debug for Di {
             "{:<15} ---  {:<24} .. {:<24}  ---  {:<10} --- {}",
             self.pcon.ident().to_string(),
             self.pcon.price.ki.first().unwrap().open_time.to_string(),
-            self.pcon.price.t.last().unwrap().to_string(),
-            self.pcon.price.t.len().to_string(),
+            self.pcon.price.date_time.last().unwrap().to_string(),
+            self.pcon.price.date_time.len().to_string(),
             (self.pcon.price.ki.map(|x| x.pass_this as f32).mean() / 120.) as usize,
         )
     }
@@ -440,12 +455,13 @@ impl ToArc for PriceOri {
     type Output = PriceArc;
     fn to_arc(self) -> Self::Output {
         PriceArc {
-            t: self.t.to_arc(),
-            o: self.o.to_arc(),
-            h: self.h.to_arc(),
-            l: self.l.to_arc(),
-            c: self.c.to_arc(),
-            v: self.v.to_arc(),
+            date_time: self.date_time.to_arc(),
+            open: self.open.to_arc(),
+            high: self.high.to_arc(),
+            low: self.low.to_arc(),
+            close: self.close.to_arc(),
+            volume: self.volume.to_arc(),
+            amount: self.amount.to_arc(),
             ki: self.ki.to_arc(),
             immut_info: self.immut_info.map(|x| x.clone().to_arc()),
             finished: None,
