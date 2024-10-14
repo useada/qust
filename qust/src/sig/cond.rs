@@ -1,6 +1,6 @@
 use crate::idct::pms::Pms;
 use crate::sig::posi::Dire;
-use crate::trade::di::Di;
+use crate::trade::di::DataInfo;
 use chrono::Timelike;
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -13,17 +13,17 @@ pub type LoopSig<'a> = Box<dyn Fn(usize, usize) -> bool + 'a>;
 /* #region cond trait */
 #[clone_trait]
 pub trait Cond {
-    fn calc_di(&self, _di: &Di) -> avv32 {
+    fn calc_di(&self, _di: &DataInfo) -> avv32 {
         Default::default()
     }
-    fn calc_da<'a>(&self, _data: avv32, _di: &'a Di) -> LoopSig<'a> {
+    fn calc_da<'a>(&self, _data: avv32, _di: &'a DataInfo) -> LoopSig<'a> {
         Box::new(move |_e, _o| true)
     }
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data = self.calc_di(di);
         self.calc_da(data, di)
     }
-    fn update(&mut self, _di: &Di) {}
+    fn update(&mut self, _di: &DataInfo) {}
     fn to_box(&self) -> Box<dyn Cond>
     where
         Self: Sized,
@@ -41,7 +41,7 @@ pub struct Filterday;
 
 #[typetag::serde]
 impl Cond for Filterday {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data: Vec<tt> = di
             .date_time()
             .iter()
@@ -76,7 +76,7 @@ pub type Msig = MsigType<CondBox>;
 
 #[typetag::serde]
 impl Cond for Msig {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let f = self.0;
         let cond1 = self.1.cond(di);
         let cond2 = self.2.cond(di);
@@ -94,7 +94,7 @@ pub struct Iocond {
 
 #[typetag::serde]
 impl Cond for Iocond {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.calc(&self.pms)[0].clone();
         let range = self.range.clone();
         Box::new(move |e, _o| range.contains(&data[e]))
@@ -103,7 +103,7 @@ impl Cond for Iocond {
 /* #endregion */
 
 pub trait CondLoop: Send + Sync + 'static {
-    fn cond<'a>(&self, di: &'a Di) -> Box<dyn FnMut(usize) -> f32 + 'a>;
+    fn cond<'a>(&self, di: &'a DataInfo) -> Box<dyn FnMut(usize) -> f32 + 'a>;
 }
 
 /* #region FilterdayTime */
@@ -112,7 +112,7 @@ pub struct FilterdayTime(pub ForCompare<tt>);
 
 #[typetag::serde]
 impl Cond for FilterdayTime {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.date_time();
         let f = self.0.clone();
         Box::new(move |e: usize, _o: usize| f.compare_time(&data[e]))
@@ -157,7 +157,7 @@ pub struct BandCond<T>(pub Dire, pub BandState, pub T);
 
 #[typetag::serde]
 impl Cond for BandCond<Pms> {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.calc(&self.2);
         match data.len() {
             3 => {
@@ -201,7 +201,7 @@ pub struct CrossCond(pub Dire, pub Pms);
 
 #[typetag::serde]
 impl Cond for CrossCond {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.calc(&self.1);
         let short_line = data[0].clone();
         let long_line = data[1].clone();
@@ -223,7 +223,7 @@ pub struct NotCond {
 
 #[typetag::serde]
 impl Cond for NotCond {
-    fn cond<'a>(&self, di: &'a Di) -> LoopSig<'a> {
+    fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
         let f = self.cond.cond(di);
         Box::new(move |e, o| !f(e, o))
     }

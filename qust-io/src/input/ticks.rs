@@ -89,7 +89,7 @@ impl GenDi {
         })
     }
 
-    pub fn sof(&self, dil: &Dil) {
+    pub fn sof(&self, dil: &DataInfoList) {
         dil.dil.iter().for_each(|di| {
             let path_str = self.0.to_owned() + "/" + &di.pcon.inter.debug_string();
             let path_dir = Path::new(&path_str);
@@ -105,7 +105,7 @@ impl GenDi {
         price.sof(&date.to_string(), &save_path);
     }
 
-    pub fn update_dil(&self, dil: &mut Dil) {
+    pub fn update_dil(&self, dil: &mut DataInfoList) {
         dil.dil.iter_mut().for_each(|x| {
             let max_time = x.pcon.price.date_time.last().unwrap().date();
             let tick_data = self
@@ -117,7 +117,7 @@ impl GenDi {
     }
 
     pub fn update_dil_file(&self, name: &str, path: &str) {
-        let mut dil = rof::<Dil>(name, path);
+        let mut dil = rof::<DataInfoList>(name, path);
         self.update_dil(&mut dil);
         dil.sof(name, path);
     }
@@ -150,7 +150,7 @@ impl GenDi {
         }
     }
 
-    pub fn get<T: ToIdentVec>(&self, x: T) -> Dil {
+    pub fn get<T: ToIdentVec>(&self, x: T) -> DataInfoList {
         let pcon_ident_vec = x.to_ident_vec(self.0);
         let dil_vec = pcon_ident_vec
             .iter()
@@ -159,14 +159,14 @@ impl GenDi {
                 pcon.map(|x| x.to_di())
             })
             .collect();
-        Dil { dil: dil_vec }
+        DataInfoList { dil: dil_vec }
     }
 
     pub fn get_di_from_pcon_ident<T: Fromt<da> + PartialOrd + Clone>(
         &self,
         pcon_ident: &PconIdent,
         range: ForCompare<T>,
-    ) -> Di {
+    ) -> DataInfo {
         let di_tick = self.get_tick(pcon_ident.ticker, range).unwrap();
         di_tick
             .to_price_ori(pcon_ident.inter.clone(), pcon_ident.ticker)
@@ -182,7 +182,7 @@ impl GenDi {
         &self,
         x: T,
         range: ForCompare<N>,
-    ) -> Dil {
+    ) -> DataInfoList {
         let mut pcon_ident_vec = x.to_ident_vec(self.0);
         pcon_ident_vec.sort_by(|x, y| x.1.to_string().cmp(&y.1.to_string()));
         let grp = Grp(pcon_ident_vec.iter().map(|x| x.1).collect_vec());
@@ -191,7 +191,7 @@ impl GenDi {
             |x| x.to_vec(),
         );
         izip!(pcon_hm.0.into_iter(), pcon_hm.1.into_iter()).fold(
-            Dil { dil: vec![] },
+            DataInfoList { dil: vec![] },
             |mut accu, (ticker, inters)| match self.get_tick(ticker, range.clone()) {
                 Some(tick_data) => {
                     inters.iter().for_each(|inter| {
@@ -271,8 +271,8 @@ impl ToIdentVec for (TriBox, Vec<Ticker>) {
     }
 }
 
-pub trait DiToDi: AsRef<Di> + Sized {
-    fn di_to_di<T: Pri + Clone>(self, pri: T) -> Di {
+pub trait DiToDi: AsRef<DataInfo> + Sized {
+    fn di_to_di<T: Pri + Clone>(self, pri: T) -> DataInfo {
         self.as_ref()
             .calc(ori + Event(pri.pri_box()))
             .to_price_ori()
@@ -280,4 +280,4 @@ pub trait DiToDi: AsRef<Di> + Sized {
             .to_di()
     }
 }
-impl DiToDi for Di {}
+impl DiToDi for DataInfo {}

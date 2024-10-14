@@ -14,16 +14,16 @@ use std::sync::Arc;
 use std::sync::RwLock;
 use crate::live::cond_ops::*;
 
-type LiveSigUpDate<'a> = Box<dyn FnMut(&'a Di) + 'a>;
+type LiveSigUpDate<'a> = Box<dyn FnMut(&'a DataInfo) + 'a>;
 
 /* #region Trait LiveSig */
 ///object implemented LiveSig cann't keep its running state, the state
 /// must be reserved in di's data_save.
 pub trait LiveSig: Calc<Arc<BoxAny>> {
     type R;
-    fn get_data(&self, di: &Di) -> RwLock<Self::R>;
-    fn update(&self, di: &Di, data: &RwLock<Self::R>);
-    fn update2<'a>(&'a self, _di: &'a Di, _data: &'a RwLock<Self::R>) -> LiveSigUpDate<'a> {
+    fn get_data(&self, di: &DataInfo) -> RwLock<Self::R>;
+    fn update(&self, di: &DataInfo, data: &RwLock<Self::R>);
+    fn update2<'a>(&'a self, _di: &'a DataInfo, _data: &'a RwLock<Self::R>) -> LiveSigUpDate<'a> {
         todo!()
     }
 }
@@ -52,13 +52,13 @@ impl Tsig {
 
 impl LiveSig for Tsig {
     type R = (HashSet<OpenIng>, TsigRes);
-    fn get_data(&self, di: &Di) -> RwLock<(HashSet<OpenIng>, TsigRes)> {
+    fn get_data(&self, di: &DataInfo) -> RwLock<(HashSet<OpenIng>, TsigRes)> {
         let len = di.len() + 500;
         let o_vec = Vec::with_capacity(len);
         let e_vec = Vec::with_capacity(len);
         RwLock::new((HashSet::new(), (o_vec, e_vec)))
     }
-    fn update(&self, di: &Di, data: &RwLock<(HashSet<OpenIng>, TsigRes)>) {
+    fn update(&self, di: &DataInfo, data: &RwLock<(HashSet<OpenIng>, TsigRes)>) {
         match self {
             Tsig::Tsig(o_dire, e_dire, o_sig, e_sig) => {
                 let time_vec = di.date_time();
@@ -173,7 +173,7 @@ pub enum Stp {
 impl LiveSig for Stp {
     type R = StpRes;
 
-    fn get_data(&self, di: &Di) -> RwLock<Self::R> {
+    fn get_data(&self, di: &DataInfo) -> RwLock<Self::R> {
         let len = di.len();
         let h_res = Vec::with_capacity(len);
         let o_res = Vec::with_capacity(len);
@@ -181,7 +181,7 @@ impl LiveSig for Stp {
         RwLock::new((h_res, o_res, e_res))
     }
 
-    fn update(&self, di: &Di, data: &RwLock<Self::R>) {
+    fn update(&self, di: &DataInfo, data: &RwLock<Self::R>) {
         let mut res = data.write().unwrap();
         match self {
             Stp::Stp(tsig) => {
@@ -230,12 +230,12 @@ pub struct CondWeight(pub Vec<(Box<dyn Cond>, f32)>);
 impl LiveSig for CondWeight {
     type R = v32;
 
-    fn get_data(&self, di: &Di) -> RwLock<Self::R> {
+    fn get_data(&self, di: &DataInfo) -> RwLock<Self::R> {
         let init_len = di.len() + 500;
         RwLock::new(Vec::with_capacity(init_len))
     }
 
-    fn update(&self, di: &Di, data: &RwLock<Self::R>) {
+    fn update(&self, di: &DataInfo, data: &RwLock<Self::R>) {
         let mut data = data.write().unwrap();
         let mut f_vec = self.0.iter().map(|(x, y)| (x.cond(di), y)).collect_vec();
         for i in data.len()..di.len() {
@@ -264,12 +264,12 @@ pub enum Ptm {
 impl LiveSig for Ptm {
     type R = PtmResState;
 
-    fn get_data(&self, di: &Di) -> RwLock<Self::R> {
+    fn get_data(&self, di: &DataInfo) -> RwLock<Self::R> {
         let res = Self::R::new(di.len());
         RwLock::new(res)
     }
 
-    fn update(&self, di: &Di, data: &RwLock<Self::R>) {
+    fn update(&self, di: &DataInfo, data: &RwLock<Self::R>) {
         let mut res = data.write().unwrap();
         match self {
             Ptm::Ptm1(money, stp) => {
@@ -307,14 +307,14 @@ impl LiveSig for Ptm {
                 let o_fn = o_sig.cond(di);
                 let e_fn = e_sig.cond(di);
                 let hold_unit = match dire {
-                    Dire::Lo => NormHold::Lo(1.),
-                    Dire::Sh => NormHold::Sh(1.),
+                    Dire::Lo => NormHold::Long(1.),
+                    Dire::Sh => NormHold::Short(1.),
                 };
                 for i in res.ptm_res.0.len()..di.len() {
                     let (hold_now, open_now, exit_now) = match res.open_i {
                         Some(o) => {
                             if e_fn(i, o) {
-                                let hold_now = f(&NormHold::No, i);
+                                let hold_now = f(&NormHold::Nothing, i);
                                 let (open_now, exit_now) = hold_now.sub_norm_hold(&res.state);
                                 res.state = hold_now.clone();
                                 res.open_i = None;
@@ -377,9 +377,9 @@ impl LiveSig for Ptm {
                 // println!("ooooo {:?}  {:?}", res.ptm_res.0.len(), sigr.1.len());
                 for i in res.ptm_res.0.len()..sigr.1.len() {
                     let sig_now = match sigr.1[i] {
-                        NormOpen::Lo(i) => NormHold::Lo(i),
-                        NormOpen::Sh(i) => NormHold::Sh(i),
-                        NormOpen::No => NormHold::No,
+                        NormOpen::Lo(i) => NormHold::Long(i),
+                        NormOpen::Sh(i) => NormHold::Short(i),
+                        NormOpen::No => NormHold::Nothing,
                     };
                     // println!("{:?} --- {:?}", sigr.1[i], sig_now);
                     res.ptm_res.0.push(sig_now);

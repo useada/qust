@@ -26,30 +26,30 @@ impl Algo for TargetSimple {
             let hold_local = stream_algo.stream_api.hold;
             let tick_data = stream_algo.stream_api.tick_data;
             let gap = target - hold_local.sum();
-            match (gap, target, hold_local.yd_sh, hold_local.yd_lo, hold_local.td_sh, hold_local.td_lo) {
-                (0, ..) => No,
-                (_, 0.., 1.., ..) => LoCloseYd(hold_local.yd_sh, tick_data.bid_price1),
-                (_, 0.., 0, _, 1.., _) => LoClose(hold_local.td_sh, tick_data.bid_price1),
-                (0.., 0.., 0, _, 0, _) => LoOpen(gap, tick_data.bid_price1),
+            match (gap, target, hold_local.yd_short, hold_local.yd_long, hold_local.td_short, hold_local.td_long) {
+                (0, ..) => Nothing,
+                (_, 0.., 1.., ..) => LongCloseYd(hold_local.yd_short, tick_data.bid_price1),
+                (_, 0.., 0, _, 1.., _) => LongClose(hold_local.td_short, tick_data.bid_price1),
+                (0.., 0.., 0, _, 0, _) => LongOpen(gap, tick_data.bid_price1),
                 (..=-1, 0.., 0, 1.., 0, 0..) => {
-                    if hold_local.yd_lo >= -gap {
-                        ShCloseYd(-gap, tick_data.ask_price1)
+                    if hold_local.yd_long >= -gap {
+                        ShortCloseYd(-gap, tick_data.ask_price1)
                     } else {
-                        ShCloseYd(hold_local.yd_lo, tick_data.ask_price1)
+                        ShortCloseYd(hold_local.yd_long, tick_data.ask_price1)
                     }
                 }
-                (..=-1, 0.., 0, 0, 0, 1..) => ShClose(-gap, tick_data.ask_price1),
-                (_, ..=-1, _, 1.., ..) => ShCloseYd(hold_local.yd_lo, tick_data.ask_price1),
-                (_, ..=-1, _, 0, _, 1..) => ShClose(hold_local.td_lo, tick_data.ask_price1),
-                (..=-1, ..=-1, _, 0, _, 0) => ShOpen(-gap, tick_data.ask_price1),
+                (..=-1, 0.., 0, 0, 0, 1..) => ShortClose(-gap, tick_data.ask_price1),
+                (_, ..=-1, _, 1.., ..) => ShortCloseYd(hold_local.yd_long, tick_data.ask_price1),
+                (_, ..=-1, _, 0, _, 1..) => ShortClose(hold_local.td_long, tick_data.ask_price1),
+                (..=-1, ..=-1, _, 0, _, 0) => ShortOpen(-gap, tick_data.ask_price1),
                 (0.., ..=-1, 1.., 0, 0.., 0) => {
-                    if hold_local.yd_sh >= gap {
-                        LoCloseYd(gap, tick_data.bid_price1)
+                    if hold_local.yd_short >= gap {
+                        LongCloseYd(gap, tick_data.bid_price1)
                     } else {
-                        LoCloseYd(hold_local.yd_sh, tick_data.bid_price1)
+                        LongCloseYd(hold_local.yd_short, tick_data.bid_price1)
                     }
                 }
-                (0.., ..=-1, 0, 0, 1.., 0) => LoClose(gap, tick_data.bid_price1),
+                (0.., ..=-1, 0, 0, 1.., 0) => LongClose(gap, tick_data.bid_price1),
                 _ => panic!("something action wrong"),
             }
         })

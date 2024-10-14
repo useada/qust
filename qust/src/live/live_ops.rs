@@ -179,21 +179,22 @@ impl UpdateDi {
 
                         match order_pool.process_order_action(order_action) {
                             Ok(Some(order_input)) => {
-                                loge!(trade_api.ticker, "stra send a order to ctp: {:?}", order_input);
+                                loge!(trade_api.ticker, "send order to ctp: {:?}", order_input);
                                 trade_api.data_send.set(order_input);
                                 trade_api.data_send.notify_all();
                             }
                             Ok(None) => {
-                                loge!(trade_api.ticker, "stra order pool calc a none order send");
+                                loge!(trade_api.ticker, "no need send order");
                             }
                             Err(e) => {
-                                loge!(trade_api.ticker, "order output error: {:?}", e);
+                                loge!(trade_api.ticker, "order error: {:?}", e);
                             }
                         }
                         // loge!(trade_api.ticker, "data recive ++++++++++ tick data ++++++++++++++");
                     }
                     DataReceive::OrderReceive(data_receive) => {
                         // loge!(trade_api.ticker, "data recive ---------- data receive --------------");
+                        loge!(trade_api.ticker, "on order: {:?}", data_receive);
                         if let Err(e) = order_pool.update_order(data_receive) {
                             loge!(trade_api.ticker, "update err {:?}", e);
                         }

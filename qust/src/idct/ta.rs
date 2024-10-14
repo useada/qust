@@ -5,7 +5,7 @@ use super::prelude::Convert;
 use crate::idct::fore::ForeTaCalc;
 use crate::idct::part::Part::*;
 use crate::prelude::{find_day_index_night_flat, KlineState, PriBox};
-use crate::trade::di::Di;
+use crate::trade::di::DataInfo;
 use crate::trade::ticker::Comm;
 use qust_ds::roll::RollFunc;
 use qust_ds::prelude::*;
@@ -24,12 +24,12 @@ pub enum KlineType {
 
 #[clone_trait]
 pub trait Ta {
-    fn start(&self, _di: &Di) {}
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn start(&self, _di: &DataInfo) {}
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32;
-    fn end(&self, _di: &Di) {}
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32;
+    fn end(&self, _di: &DataInfo) {}
 }
 
 #[derive(Clone, Serialize, Deserialize, AsRef)]
@@ -43,10 +43,10 @@ impl std::fmt::Debug for ForeTa {
 
 #[typetag::serde]
 impl Ta for ForeTa {
-    fn start(&self, di: &Di) {
+    fn start(&self, di: &DataInfo) {
         di.part.write().unwrap().push(ono);
     }
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         let part = di
             .part
             .read()
@@ -61,10 +61,10 @@ impl Ta for ForeTa {
         let pms = (part, self.0.clone()).get_pms_from_ta(di);
         di.calc(&pms)
     }
-    fn calc_da(&self, da: Vec<&[f32]>, di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         self.1.fore_ta_calc(da, di)
     }
-    fn end(&self, di: &Di) {
+    fn end(&self, di: &DataInfo) {
         di.part.write().unwrap().pop();
     }
 }
@@ -72,7 +72,7 @@ impl Ta for ForeTa {
 #[ta_derive]
 pub struct CommSlip(pub f32, pub f32);
 
-impl Di {
+impl DataInfo {
     pub fn profit2(&self) -> Vec<f32> {
         let c = self.close();
         let c_lag = c.lag(1f32);
@@ -102,7 +102,7 @@ impl Di {
 
 #[typetag::serde]
 impl Ta for CommSlip {
-    fn calc_da(&self, data: Vec<&[f32]>, di: &Di) -> vv32 {
+    fn calc_da(&self, data: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         let c = *di.close().last().unwrap();
         let ticker_info = di.pcon.ticker.info();
         let tz = ticker_info.tz;
@@ -124,7 +124,7 @@ impl Ta for CommSlip {
 
 #[typetag::serde]
 impl Ta for KlineType {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         use KlineType::*;
         match self {
             Open => di.open(),
@@ -136,7 +136,7 @@ impl Ta for KlineType {
         .pip(|x| vec![x])
     }
 
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         vec![da[0].to_vec()]
     }
 }
@@ -148,10 +148,10 @@ pub struct Rsi(pub usize);
 
 #[typetag::serde]
 impl Ta for Rsi {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let da = da[0];
         let ret = izip!(da.iter(), da.lag((1usize, f32::NAN)).iter())
             .map(|(a, b)| a - b)
@@ -181,10 +181,10 @@ pub struct Tr;
 
 #[typetag::serde]
 impl Ta for Tr {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.high(), di.low(), di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let h = da[0];
         let l = da[1];
         let c = da[2];
@@ -206,10 +206,10 @@ pub struct Atr(pub usize);
 
 #[typetag::serde]
 impl Ta for Atr {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.calc(&Tr)[0].clone()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let res = da[0].ema(self.0);
         vec![res]
     }
@@ -220,10 +220,10 @@ pub struct RollTa<T>(pub T, pub RollFunc, pub RollOps);
 
 #[typetag::serde(name = "rollta_klinetype")]
 impl Ta for RollTa<KlineType> {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         da.roll(self.1, self.2.clone())
     }
 }
@@ -236,10 +236,10 @@ impl AsRef<Box<dyn Ta>> for Box<dyn Ta> {
 
 #[typetag::serde(name = "rollta_boxta")]
 impl Ta for RollTa<Box<dyn Ta>> {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         di.calc::<&Box<dyn Ta>, Box<dyn Ta>, avv32>(&self.0)
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         da.roll(self.1, self.2.clone())
     }
 }
@@ -249,10 +249,10 @@ pub struct Max(pub KlineType, pub usize);
 
 #[typetag::serde]
 impl Ta for Max {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.get_kline(&self.0)]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         da.roll_max(self.1)
     }
 }
@@ -262,10 +262,10 @@ pub struct Min(pub KlineType, pub usize);
 
 #[typetag::serde]
 impl Ta for Min {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.get_kline(&self.0)]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         da.roll_min(self.1)
     }
 }
@@ -278,10 +278,10 @@ pub struct KDayRatio(pub usize);
 
 #[typetag::serde]
 impl Ta for KDayRatio {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.open(), di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let gap = izip!(da[0].iter(), da[1].iter())
             .map(|(x, y)| (x - y).abs())
             .collect::<v32>();
@@ -319,11 +319,11 @@ pub struct ShiftDays(pub usize, pub KlineType, pub IndexSpec);
 
 #[typetag::serde]
 impl Ta for ShiftDays {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.get_kline(&self.1)]
     }
 
-    fn calc_da(&self, da: Vec<&[f32]>, di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         // let da_vec = di.t().iter().map(|x| x.date()).collect();
         let da_vec = find_day_index_night_flat(di.date_time());
         let grp = Grp(da_vec);
@@ -345,7 +345,7 @@ pub struct ShiftInter {
 
 #[typetag::serde]
 impl Ta for ShiftInter {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         let price_arc = di.calc(Convert::Event(self.inter.clone()));
         let finished_vec = &price_arc.finished.unwrap();
         let mut da_vec = Vec::with_capacity(finished_vec.len());
@@ -361,7 +361,7 @@ impl Ta for ShiftInter {
          vec![di.get_kline(&self.kline), Arc::new(da_vec)]
     }
 
-    fn calc_da(&self,da:Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da:Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let da_vec = da[1].to_vec();
         let grp = Grp(da_vec);
         let(vec_index, vec_value) = grp.apply(da[0], |x| self.index_spec.get(x));
@@ -378,7 +378,7 @@ pub struct DayKlineWrapper(pub KlineType);
 
 #[typetag::serde(name = "DayKlineWrapper")]
 impl Ta for DayKlineWrapper {
-    fn calc_da(&self, _da: Vec<&[f32]>, di: &Di) -> vv32 {
+    fn calc_da(&self, _da: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         let da_vec = find_day_index_night_flat(di.date_time());
         let grp = Grp(da_vec);
         let (_, vec_value) = match self.0 {
@@ -398,7 +398,7 @@ pub struct Diff(pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for Diff {
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let res = izip!(da[0].ema(self.0), da[0].ema(self.1))
             .map(|(x, y)| x - y)
             .collect_vec();
@@ -411,10 +411,10 @@ pub struct Macd(pub usize, pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for Macd {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.calc(Diff(self.0, self.1))[0].clone()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let res = izip!(da[0].iter(), da[0].ema(self.2).iter())
             .map(|(x, y)| x - y)
             .collect();
@@ -435,11 +435,11 @@ pub struct Jta(pub usize, pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for Kta {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         // vec![di.h(), di.l(), di.c()]
         vec![di.close(), di.close(), di.close()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let rsvnum =
             izip!(da[2].iter(), da[1].roll(RollFunc::Min, RollOps::N(self.0))).map(|(x, y)| x - y);
         let rsvdom = izip!(
@@ -454,24 +454,24 @@ impl Ta for Kta {
 
 #[typetag::serde]
 impl Ta for Dta {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![di.calc(Kta(self.0, self.1, self.2))[0].clone()]
     }
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         vec![da[0].ema(self.2)]
     }
 }
 
 #[typetag::serde]
 impl Ta for Jta {
-    fn calc_di(&self, di: &Di) -> avv32 {
+    fn calc_di(&self, di: &DataInfo) -> avv32 {
         vec![
             di.calc(Kta(self.0, self.1, self.2))[0].clone(),
             di.calc(Dta(self.0, self.1, self.2))[0].clone(),
         ]
     }
 
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let res = izip!(da[1].iter(), da[0].iter())
             .map(|(x, y)| 3. * x - 2. * y)
             .collect_vec();
@@ -486,7 +486,7 @@ pub struct EffRatio(pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for EffRatio {
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let lag_da = da[0].lag(self.0 as f32);
         let diff_data = izip!(da[0].iter(), lag_da.iter())
             .map(|(x, y)| x - y)
@@ -510,7 +510,7 @@ pub struct Spread(pub usize);
 
 #[typetag::serde]
 impl Ta for Spread {
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let res = izip!(
             da[0].iter(),
             da[0].roll(RollFunc::Mean, RollOps::N(self.0)).iter()
@@ -528,7 +528,7 @@ pub struct Rankma(pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for Rankma {
-    fn calc_da(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn calc_da(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let ma = da[0].roll(RollFunc::Mean, RollOps::N(self.0));
         let madiff = ma
             .rolling(2)

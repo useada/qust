@@ -30,23 +30,23 @@ pub type OrderResult<T> = Result<T, OrderError>;
 #[ta_derive]
 #[derive(Default, PartialEq)]
 pub enum OrderAction {
-    LoOpen(i32, f32),
-    LoClose(i32, f32),
-    LoCloseYd(i32, f32),
-    ShOpen(i32, f32),
-    ShClose(i32, f32),
-    ShCloseYd(i32, f32),
+    LongOpen(i32, f32),
+    LongClose(i32, f32),
+    LongCloseYd(i32, f32),
+    ShortOpen(i32, f32),
+    ShortClose(i32, f32),
+    ShortCloseYd(i32, f32),
     #[default]
-    No,
+    Nothing,
 }
 
 
 impl From<NormHold> for LiveTarget {
     fn from(value: NormHold) -> Self {
         match value {
-            NormHold::No => Self::No,
-            NormHold::Lo(i) => Self::Lo(i),
-            NormHold::Sh(i) => Self::Sh(i),
+            NormHold::Nothing => Self::Nothing,
+            NormHold::Long(i) => Self::Long(i),
+            NormHold::Short(i) => Self::Short(i),
         }
     }
 }
@@ -54,9 +54,9 @@ impl From<NormHold> for LiveTarget {
 #[derive(Default, Debug, Clone)]
 pub enum LiveTarget {
     #[default]
-    No,
-    Lo(f32),
-    Sh(f32),
+    Nothing,
+    Long(f32),
+    Short(f32),
     OrderAction(OrderAction),
 }
 
@@ -64,26 +64,26 @@ impl LiveTarget {
     pub fn add_live_target(&self, other: &Self) -> Self {
         use LiveTarget::*;
         match (self, other) {
-            (No, other) => other.clone(),
-            (other, No) => other.clone(),
-            (Lo(n1), Lo(n2)) => Lo(n1 + n2),
-            (Sh(n1), Sh(n2)) => Sh(n1 + n2),
-            (Lo(n1), Sh(n2)) => {
+            (Nothing, other) => other.clone(),
+            (other, Nothing) => other.clone(),
+            (Long(n1), Long(n2)) => Long(n1 + n2),
+            (Short(n1), Short(n2)) => Short(n1 + n2),
+            (Long(n1), Short(n2)) => {
                 if n1 > n2 {
-                    Lo(n1 - n2)
+                    Long(n1 - n2)
                 } else if n1 < n2 {
-                    Sh(n2 - n1)
+                    Short(n2 - n1)
                 } else {
-                    No
+                    Nothing
                 }
             }
-            (Sh(n1), Lo(n2)) => {
+            (Short(n1), Long(n2)) => {
                 if n1 > n2 {
-                    Sh(n1 - n2)
+                    Short(n1 - n2)
                 } else if n1 < n2 {
-                    Lo(n1 - n2)
+                    Long(n1 - n2)
                 } else {
-                    No
+                    Nothing
                 }
             }
             _ => panic!("cannot add: {:?} {:?}", self, other),
@@ -95,9 +95,9 @@ impl ToNum for LiveTarget {
     fn to_num(&self) -> f32 {
         use LiveTarget::*;
         match self {
-            Lo(i) => *i,
-            Sh(i) => -i,
-            No => 0.,
+            Long(i) => *i,
+            Short(i) => -i,
+            Nothing => 0.,
             _ => panic!("cannot convert to num for: {:?}", self),
         }
     }
@@ -105,21 +105,21 @@ impl ToNum for LiveTarget {
 
 #[derive(Debug, Default, Clone)]
 pub struct HoldLocal {
-    pub yd_sh: i32,
-    pub yd_lo: i32,
-    pub td_sh: i32,
-    pub td_lo: i32,
-    pub exit_sh: i32,
-    pub exit_lo: i32,
+    pub yd_short: i32,
+    pub yd_long: i32,
+    pub td_short: i32,
+    pub td_long: i32,
+    pub exit_short: i32,
+    pub exit_long: i32,
 }
 
 impl HoldLocal {
     pub fn sum(&self) -> i32 {
-        self.yd_lo + self.td_lo - self.yd_sh - self.td_sh
+        self.yd_long + self.td_long - self.yd_short - self.td_short
     }
 
     pub fn sum_pending(&self) -> i32 {
-        self.sum() + self.exit_lo - self.exit_sh
+        self.sum() + self.exit_long - self.exit_short
     }
 }
 
@@ -196,13 +196,14 @@ impl OrderPool {
         let order = self.pool
             .get_mut(order_ref)
             .ok_or(OrderError::OrderNotFound(order_ref.to_string()))?;
+
         match order.is_to_cancel {
             true => {
-                loge!(self.ticker, "cancel: canceling");
+                loge!(self.ticker, "cancel_order: canceling");
                 Ok(None)
             }
             false => {
-                loge!(self.ticker, "cancel: not canceling");
+                loge!(self.ticker, "cancel_order: set order canceling");
                 order.is_to_cancel = true;
                 Ok(Some(order.clone()))
             }
@@ -220,23 +221,25 @@ impl OrderPool {
             .pool
             .get(order_ref)
             .ok_or(OrderError::OrderNotFound(order_ref.to_string()))?;
+
         match &order_action.order_action {
-            OrderAction::LoOpen(i, _) => {
-                self.hold.td_lo += c.unwrap_or(*i);
+            OrderAction::LongOpen(i, _) => {
+                self.hold.td_long += c.unwrap_or(*i);
             }
-            OrderAction::ShOpen(i, _) => {
-                self.hold.td_sh += c.unwrap_or(*i);
+            OrderAction::ShortOpen(i, _) => {
+                self.hold.td_short += c.unwrap_or(*i);
             }
-            OrderAction::LoClose(i, _) => {
-                self.hold.td_sh -= c.unwrap_or(*i);
+            OrderAction::LongClose(i, _) => {
+                self.hold.td_short -= c.unwrap_or(*i);
             }
-            OrderAction::ShClose(i, _) => {
-                self.hold.td_lo -= c.unwrap_or(*i);
+            OrderAction::ShortClose(i, _) => {
+                self.hold.td_long -= c.unwrap_or(*i);
             }
             other => {
-                return Err(OrderError::Logic(format!("order action on what? {:?} {:?}", other, line!())));
+                return Err(OrderError::Logic(format!("unknown order action on what? {:?} {:?}", other, line!())));
             }
         }
+
         self.delete_order(order_ref)?;
         Ok(true)
     }
@@ -248,6 +251,7 @@ impl OrderPool {
             .pool
             .get_mut(&order.id)
             .ok_or(OrderError::OrderNotFound(order.id.clone()))?;
+
         order_local.order_ref = order.order_ref;
         order_local.front_id = order.front_id;
         order_local.session_id = order.session_id;
@@ -284,57 +288,61 @@ impl OrderPool {
         res
     }
 
-    fn get_to_cancel_order(&self, order_action: &OrderAction) -> CancelRes {
+    fn get_to_cancel_order(&self, order_action: &OrderAction) -> CancelResult {
         use OrderStatus::*;
-        if let OrderAction::No = order_action {
-            if !self.pool.is_empty() {
-                return CancelRes::CancelAll;
+
+        if let OrderAction::Nothing = order_action {
+            return if !self.pool.is_empty() {
+                CancelResult::CancelAll
             } else {
-                return CancelRes::DoNothing;
+                CancelResult::DoNothing
             }
         }
+
         for order_input in self.pool.values() {
             if let  PartTradedQueueing(_) = order_input.order_status {
-                if &order_input.order_action != order_action {
-                    return CancelRes::HaveDiffOrder(order_input.id.clone());
+                return if &order_input.order_action != order_action {
+                    CancelResult::HaveDiffOrder(order_input.id.clone())
                 } else {
-                    return CancelRes::HaveTheSameOrder;
+                    CancelResult::HaveTheSameOrder
                 }
             }
         }
-        CancelRes::NotHave
+
+        CancelResult::NotHave
     }
 
     pub fn process_order_action(&mut self, order_action: OrderAction) -> OrderResult<Option<OrderSend>> {
         if self.is_need_to_wait() {
             std::thread::sleep(std::time::Duration::from_millis(10));
-            loge!(self.ticker, "order pool said: need to wait");
+            loge!(self.ticker, "order pool: frequency is too high");
             return Ok(None);
         }
+
         match self.get_to_cancel_order(&order_action) {
-            CancelRes::HaveTheSameOrder => {
-                loge!(self.ticker, "order pool have the same order");
+            CancelResult::HaveTheSameOrder => {
+                loge!(self.ticker, "order pool: have same order");
                 Ok(None)
             }
-            CancelRes::HaveDiffOrder(order_ref) => {
+            CancelResult::HaveDiffOrder(order_ref) => {
                 let order_res = self.cancel_order(&order_ref)?;
-                loge!(self.ticker, "order pool need to cancel this order: {:?}", order_res);
+                loge!(self.ticker, "order pool: need to cancel this order: {:?}", order_res);
                 Ok(order_res)
             }
-            CancelRes::NotHave => {
+            CancelResult::NotHave => {
                 let order_res = self.create_order(order_action);
-                loge!(self.ticker, "order pool need to create this order: {:?}", order_res);
+                loge!(self.ticker, "order pool: need to create this order: {:?}", order_res);
                 Ok(Some(order_res))
             }
-            CancelRes::CancelAll => {
-                loge!(self.ticker, "order pool cancel all orders: {:?}", order_action);
+            CancelResult::CancelAll => {
+                loge!(self.ticker, "order pool: cancel all orders: {:?}", order_action);
                 match self.pool.keys().take(1).next().cloned() {
                     Some(order_id) => self.cancel_order(&order_id),
                     None => Ok(None),
                 }
             }
-            CancelRes::DoNothing => {
-                loge!(self.ticker, "order pool do nothing: {:?}", order_action);
+            CancelResult::DoNothing => {
+                loge!(self.ticker, "order pool: do nothing: {:?}", order_action);
                 Ok(None)
             }
         }
@@ -342,7 +350,7 @@ impl OrderPool {
 }
 
 
-enum CancelRes {
+enum CancelResult {
     HaveTheSameOrder,
     HaveDiffOrder(String),
     NotHave,

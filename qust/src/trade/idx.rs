@@ -2,7 +2,7 @@ use super::inter::TriBox;
 use crate::prelude::{
     find_day_index_night_pre, PconIdent, PriceArc, Stra, StraKind, Stral, Ticker,
 };
-use crate::prelude::{Di, Dil, InfoPnlRes, PnlRes, PriceOri, PriceTick};
+use crate::prelude::{DataInfo, DataInfoList, InfoPnlRes, PnlRes, PriceOri, PriceTick};
 use qust_ds::prelude::*;
 use std::borrow::Cow;
 use std::ops::Range;
@@ -81,14 +81,14 @@ where
     }
 }
 
-impl<T> GetPart<T> for Dil
+impl<T> GetPart<T> for DataInfoList
 where
-    Di: GetPart<T>,
+    DataInfo: GetPart<T>,
     T: Clone,
 {
     fn get_part(&self, idx: T) -> Self {
         let di_vec = self.dil.map(|x| x.get_part(idx.clone()));
-        Dil { dil: di_vec }
+        DataInfoList { dil: di_vec }
     }
 }
 
@@ -245,7 +245,7 @@ impl IdxOut for PriceOri {
     }
 }
 
-impl IdxOut for Di {
+impl IdxOut for DataInfo {
     fn idx_out(&self, idx: Idx) -> Self {
         self.pcon
             .price
@@ -307,24 +307,24 @@ impl GetEqual<Ticker> for Ticker {
         self == other
     }
 }
-impl GetEqual<Ticker> for Di {
+impl GetEqual<Ticker> for DataInfo {
     fn get_equal(&self, other: &Ticker) -> bool {
         &self.pcon.ticker == other
     }
 }
-impl GetEqual<TriBox> for Di {
+impl GetEqual<TriBox> for DataInfo {
     fn get_equal(&self, other: &TriBox) -> bool {
         &self.pcon.inter == other
     }
 }
-impl GetEqual<PconIdent> for Di {
+impl GetEqual<PconIdent> for DataInfo {
     fn get_equal(&self, other: &PconIdent) -> bool {
         &self.pcon.ident() == other
     }
 }
-impl<T> GetEqual<Vec<T>> for Di
+impl<T> GetEqual<Vec<T>> for DataInfo
 where
-    Di: GetEqual<T>,
+    DataInfo: GetEqual<T>,
     T: Sized,
 {
     fn get_equal(&self, other: &Vec<T>) -> bool {
@@ -336,9 +336,9 @@ where
         false
     }
 }
-impl<F> GetEqual<F> for Di
+impl<F> GetEqual<F> for DataInfo
 where
-    F: Fn(&Di) -> bool,
+    F: Fn(&DataInfo) -> bool,
 {
     fn get_equal(&self, other: &F) -> bool {
         other(self)
@@ -423,16 +423,16 @@ pub trait GetCdt<T> {
     fn get_idx(&self, idx: T) -> Self::Output<'_>;
 }
 
-impl<T> GetCdt<T> for Dil
+impl<T> GetCdt<T> for DataInfoList
 where
-    Di: GetEqual<T>,
+    DataInfo: GetEqual<T>,
 {
-    type Output<'a> = Dil;
+    type Output<'a> = DataInfoList;
     fn get_idx(&self, idx: T) -> Self::Output<'_> {
         self.dil
             .get_idx(idx)
             .into_map(|x| x.clone())
-            .pip(|x| Dil { dil: x })
+            .pip(|x| DataInfoList { dil: x })
     }
 }
 
@@ -460,11 +460,11 @@ where
 
 pub struct OnlyOne<T>(pub T);
 
-impl<T> GetCdt<OnlyOne<T>> for Dil
+impl<T> GetCdt<OnlyOne<T>> for DataInfoList
 where
-    Di: GetEqual<T>,
+    DataInfo: GetEqual<T>,
 {
-    type Output<'a> = Option<&'a Di>;
+    type Output<'a> = Option<&'a DataInfo>;
     fn get_idx(&self, idx: OnlyOne<T>) -> Self::Output<'_> {
         let g = self.dil.iter().position(|x| x.get_equal(&idx.0))?;
         Some(&self.dil[g])
@@ -494,12 +494,12 @@ impl HasLen for PriceArc {
         self.date_time.size()
     }
 }
-impl HasLen for Di {
+impl HasLen for DataInfo {
     fn size(&self) -> usize {
         self.pcon.price.size()
     }
 }
-impl HasLen for Dil {
+impl HasLen for DataInfoList {
     fn size(&self) -> usize {
         self.dil.size()
     }

@@ -7,16 +7,16 @@ pub trait BtKline<Input> {
 }
 
 
-impl<'a> BtKline<(&'a Di, CommSlip)> for Ptm {
+impl<'a> BtKline<(&'a DataInfo, CommSlip)> for Ptm {
     type Output = PnlRes<dt>;
-    fn bt_kline(&self, input: (&Di, CommSlip)) -> Self::Output {
+    fn bt_kline(&self, input: (&DataInfo, CommSlip)) -> Self::Output {
         input.0.pnl(self, input.1)
     }
 }
 
-impl<'a> BtKline<(&'a Di, CommSlip)> for Vec<Ptm> {
+impl<'a> BtKline<(&'a DataInfo, CommSlip)> for Vec<Ptm> {
     type Output = Vec<PnlRes<dt>>;
-    fn bt_kline(&self, input: (&'a Di, CommSlip)) -> Self::Output {
+    fn bt_kline(&self, input: (&'a DataInfo, CommSlip)) -> Self::Output {
         thread::scope(|scope| {
             let mut handles = vec![];
             for ptm in self.iter() {
@@ -35,13 +35,13 @@ impl<'a> BtKline<(&'a Di, CommSlip)> for Vec<Ptm> {
     }
 }
 
-impl<'a, T, N> BtKline<(Vec<&'a Di>, CommSlip)> for T 
+impl<'a, T, N> BtKline<(Vec<&'a DataInfo>, CommSlip)> for T
 where
-    T: BtKline<(&'a Di, CommSlip), Output = N> + Clone + Send + Sync,
+    T: BtKline<(&'a DataInfo, CommSlip), Output = N> + Clone + Send + Sync,
     N: Send + Sync,
 {
     type Output = Vec<N>;
-    fn bt_kline(&self, input: (Vec<&'a Di>, CommSlip)) -> Self::Output {
+    fn bt_kline(&self, input: (Vec<&'a DataInfo>, CommSlip)) -> Self::Output {
         thread::scope(|scope| {
             let mut handles = vec![];
             for di in input.0.into_iter() {

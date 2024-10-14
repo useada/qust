@@ -15,31 +15,31 @@ impl BtMatch for MatchSimple {
         let tick_data = stream_bt_match.tick_data;
         let hold = stream_bt_match.hold;
         match stream_bt_match.order_action.clone() {
-            LoOpen(i, price) => {
+            LongOpen(i, price) => {
                 if tick_data.last_price <= price {
-                    res = Some(TradeInfo { time: tick_data.date_time, action: LoOpen(i, price) });
-                    hold.td_lo += i;
+                    res = Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, price) });
+                    hold.td_long += i;
                 }
             }
-            LoClose(i, price) => {
+            LongClose(i, price) => {
                 if tick_data.last_price <= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: LoClose(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: LoClose(i, price) });
-                    hold.td_sh -= i;
+                    res = Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, price) });
+                    hold.td_short -= i;
                 }
             }
-            ShOpen(i, price) => {
+            ShortOpen(i, price) => {
                 if tick_data.last_price >= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: ShOpen(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: ShOpen(i, price) });
-                    hold.td_sh += i;
+                    res = Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, price) });
+                    hold.td_short += i;
                 }
             }
-            ShClose(i, price) => {
+            ShortClose(i, price) => {
                 if tick_data.last_price >= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: ShClose(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: ShClose(i, price) });
-                    hold.td_lo -= i;
+                    res = Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, price) });
+                    hold.td_long -= i;
                 }
             }
             _ => { }
@@ -71,32 +71,32 @@ impl BtMatch for MatchSimnow {
             let hold = stream_bt_match.hold;
             let mut res = None;
             match stream_bt_match.order_action.clone() {
-                LoOpen(i, price) => {
+                LongOpen(i, price) => {
                     if tick_data.ask_price1 <= price {
                         let match_price = middle_value(price, tick_data.last_price, tick_data.ask_price1);
-                        res = Some(TradeInfo { time: tick_data.date_time, action: LoOpen(i, match_price)});
-                        hold.td_lo += i;
+                        res = Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, match_price)});
+                        hold.td_long += i;
                     }
                 }
-                LoClose(i, price) => {
+                LongClose(i, price) => {
                     if tick_data.ask_price1 <= price {
                         let match_price = middle_value(price, tick_data.last_price, tick_data.ask_price1);
-                        res = Some(TradeInfo { time: tick_data.date_time, action: LoClose(i, match_price)});
-                        hold.td_sh -= i;
+                        res = Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, match_price)});
+                        hold.td_short -= i;
                     }
                 }
-                ShOpen(i, price) => {
+                ShortOpen(i, price) => {
                     if tick_data.bid_price1 >= price {
                         let match_price = middle_value(price, tick_data.last_price, tick_data.bid_price1);
-                        res = Some(TradeInfo { time: tick_data.date_time, action: ShOpen(i, match_price)});
-                        hold.td_sh += i;
+                        res = Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, match_price)});
+                        hold.td_short += i;
                     }
                 }
-                ShClose(i, price) => {
+                ShortClose(i, price) => {
                     if tick_data.bid_price1 >= price {
                         let match_price = middle_value(price, tick_data.last_price, tick_data.bid_price1);
-                        res = Some(TradeInfo { time: tick_data.date_time, action: ShClose(i, match_price)});
-                        hold.td_lo -= i;
+                        res = Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, match_price)});
+                        hold.td_long -= i;
                     }
                 }
                 _ => { }
@@ -121,21 +121,21 @@ impl BtMatch for MatchOldBt {
                 c = tick_data.last_price;
             }
             let res = match stream_bt_match.order_action.clone() {
-                LoOpen(i, _) => {
-                    hold.td_lo += i;
-                    Some(TradeInfo { time: tick_data.date_time, action: LoOpen(i, c) })
+                LongOpen(i, _) => {
+                    hold.td_long += i;
+                    Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, c) })
                 }
-                LoClose(i, _) => {
-                    hold.td_sh -= i;
-                    Some(TradeInfo { time: tick_data.date_time, action: LoClose(i, c) })
+                LongClose(i, _) => {
+                    hold.td_short -= i;
+                    Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, c) })
                 }
-                ShOpen(i, _) => {
-                    hold.td_sh += i;
-                    Some(TradeInfo { time: tick_data.date_time, action: ShOpen(i, c) })
+                ShortOpen(i, _) => {
+                    hold.td_short += i;
+                    Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, c) })
                 }
-                ShClose(i, _) => {
-                    hold.td_lo -= i;
-                    Some(TradeInfo { time: tick_data.date_time, action: ShClose(i, c) })
+                ShortClose(i, _) => {
+                    hold.td_long -= i;
+                    Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, c) })
                 }
                 _ => { None }
             };
@@ -163,21 +163,21 @@ impl BtMatch for MatchMean {
                 (tick_data.last_price + c) / 2.
             };
             let res = match stream_bt_match.order_action.clone() {
-                LoOpen(i, _) => {
-                    hold.td_lo += i;
-                    Some(TradeInfo { time: tick_data.date_time, action: LoOpen(i, p) })
+                LongOpen(i, _) => {
+                    hold.td_long += i;
+                    Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, p) })
                 }
-                LoClose(i, _) => {
-                    hold.td_sh -= i;
-                    Some(TradeInfo { time: tick_data.date_time, action: LoClose(i, p) })
+                LongClose(i, _) => {
+                    hold.td_short -= i;
+                    Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, p) })
                 }
-                ShOpen(i, _) => {
-                    hold.td_sh += i;
-                    Some(TradeInfo { time: tick_data.date_time, action: ShOpen(i, p) })
+                ShortOpen(i, _) => {
+                    hold.td_short += i;
+                    Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, p) })
                 }
-                ShClose(i, _) => {
-                    hold.td_lo -= i;
-                    Some(TradeInfo { time: tick_data.date_time, action: ShClose(i, p) })
+                ShortClose(i, _) => {
+                    hold.td_long -= i;
+                    Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, p) })
                 }
                 _ => { None }
             };

@@ -20,16 +20,16 @@ impl ApiType for TwoMaTickOrderAction {
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             let hold = stream_api.hold.sum();
-            let mut res = OrderAction::No;
+            let mut res = OrderAction::Nothing;
             if hold == 0 {
                 match last_short_value != 0. && last_short_value < last_long_value && short_value >= long_value {
                     true => {
-                        res = OrderAction::LoOpen(1, stream_api.tick_data.bid_price1);
+                        res = OrderAction::LongOpen(1, stream_api.tick_data.bid_price1);
                     }
                     false => (),
                 }
             } else if hold > 0 && short_value < long_value {
-                res = OrderAction::ShClose(hold, stream_api.tick_data.ask_price1);
+                res = OrderAction::ShortClose(hold, stream_api.tick_data.ask_price1);
             }
             last_short_value = short_value;
             last_long_value = long_value;
@@ -46,8 +46,8 @@ pub struct TwoMaStra {
 
 #[typetag::serde]
 impl Ktn for TwoMaStra {
-    fn ktn(&self,_di: &Di) -> RetFnKtn {
-        let mut last_norm_hold = NormHold::No;
+    fn ktn(&self, _di: &DataInfo) -> RetFnKtn {
+        let mut last_norm_hold = NormHold::Nothing;
         let mut short_ma = SMA::new(self.short_period).unwrap();
         let mut long_ma = SMA::new(self.long_period).unwrap();
         let mut last_short_value = 0f64;
@@ -57,13 +57,13 @@ impl Ktn for TwoMaStra {
             let short_value = short_ma.next(c);
             let long_value = long_ma.next(c);
             match last_norm_hold {
-                NormHold::No if di_kline.i != 0 => {
+                NormHold::Nothing if di_kline.i != 0 => {
                     if last_short_value < last_long_value && short_value >= long_value {
-                        last_norm_hold = NormHold::Lo(1.);
+                        last_norm_hold = NormHold::Long(1.);
                     }
                 }
-                NormHold::Lo(_) if short_value < long_value => {
-                    last_norm_hold = NormHold::No;
+                NormHold::Long(_) if short_value < long_value => {
+                    last_norm_hold = NormHold::Nothing;
                 }
                 _ => {}
             }

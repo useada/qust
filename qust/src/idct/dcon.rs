@@ -1,5 +1,5 @@
 use crate::std_prelude::*;
-use crate::trade::di::{Di, PriceArc, PriceOri, ToArc};
+use crate::trade::di::{DataInfo, PriceArc, PriceOri, ToArc};
 use crate::trade::inter::{KlineData, KlineState, Pri};
 use qust_derive::AsRef;
 use qust_ds::prelude::*;
@@ -40,7 +40,7 @@ impl Debug for Convert {
 use Convert::*;
 
 impl Convert {
-    pub fn get_pre(&self, di: &Di) -> PriceArc {
+    pub fn get_pre(&self, di: &DataInfo) -> PriceArc {
         match self {
             PreNow(pre, _now) => di.calc(&**pre),
             _ => {
@@ -51,7 +51,7 @@ impl Convert {
         }
     }
 
-    pub fn convert(&self, price: PriceArc, di: &Di) -> PriceArc {
+    pub fn convert(&self, price: PriceArc, di: &DataInfo) -> PriceArc {
         match self {
             Tf(_start, _end) => price,
             Ha(w) => {
@@ -192,11 +192,11 @@ impl Convert {
 }
 
 pub trait VertBack {
-    fn vert_back(&self, di: &Di, res: Vec<&[f32]>) -> Option<vv32>;
+    fn vert_back(&self, di: &DataInfo, res: Vec<&[f32]>) -> Option<vv32>;
 }
 
 impl VertBack for Convert {
-    fn vert_back(&self, di: &Di, res: Vec<&[f32]>) -> Option<vv32> {
+    fn vert_back(&self, di: &DataInfo, res: Vec<&[f32]>) -> Option<vv32> {
         match self {
             PreNow(pre, now) => {
                 let price_now = di.calc(self);

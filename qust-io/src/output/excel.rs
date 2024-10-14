@@ -2,7 +2,7 @@
 use std::fmt::Display;
 use num_traits::Num;
 use qust_ds::prelude::*;
-use qust::{ prelude::{ PnlRes, PriceOri, PriceTick, PriceArc, Di, Pms, cs2, Ptm }, sig::distra::Aee };
+use qust::{prelude::{PnlRes, PriceOri, PriceTick, PriceArc, DataInfo, Pms, cs2, Ptm }, sig::distra::Aee };
 use std::sync::Arc;
 use csv;
 use crate::prelude::StatsRes;
@@ -205,7 +205,7 @@ impl IntoDf for PriceArc {
         self.to_price_ori().to_df()
     }
 }
-impl IntoDf for Di {
+impl IntoDf for DataInfo {
     type Index = String;
     type Value = Vec<f32>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
@@ -252,7 +252,7 @@ impl IntoDf for Aee<PriceOri> {
         res
     }
 }
-impl IntoDf for Aee<Di> {
+impl IntoDf for Aee<DataInfo> {
     type Index = String;
     type Value = Vec<f32>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
@@ -311,7 +311,7 @@ impl<T: Display, N: Display> ToCsv for Df<T, Vec<N>> {
 }
 
 #[derive(Clone)]
-pub struct WithDi<'a, T>(pub &'a Di, pub T);
+pub struct WithDi<'a, T>(pub &'a DataInfo, pub T);
 
 impl IntoDf for WithDi<'_, Pms> {
     type Index = String;
@@ -473,7 +473,7 @@ impl IntoDf for Aee<Aee<PriceOri>> {
         df
     }
 }
-impl IntoDf for Aee<Aee<Di>> {
+impl IntoDf for Aee<Aee<DataInfo>> {
     type Index = String;
     type Value = Vec<String>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {

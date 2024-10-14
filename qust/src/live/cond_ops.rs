@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 use std::sync::RwLock;
 use crate::loge;
-use crate::prelude::{Di, DiStral, GetCdt, KlineData, NormHold, OnlyOne, OrderError, PconIdent, Stra, Stral, TickData, Ticker};
+use crate::prelude::{DataInfo, DiStral, GetCdt, KlineData, NormHold, OnlyOne, OrderError, PconIdent, Stra, Stral, TickData, Ticker};
 use qust_ds::prelude::*;
 use qust_derive::*;
 use dyn_clone::{clone_trait_object, DynClone};
@@ -12,7 +12,7 @@ use crate::sig::posi::PtmResState;
 
 #[derive(Clone)]
 pub struct DiKline<'a> {
-    pub di: &'a Di,
+    pub di: &'a DataInfo,
     pub i: usize,
 }
 
@@ -148,11 +148,11 @@ pub trait CondType2 {
 // #[clone_trait]
 #[lazy_init(data.di_kline_state.di_kline.di)]
 pub trait CondType1 {
-    fn cond_type1(&self, di: &Di) -> RetFnCondType1;
+    fn cond_type1(&self, di: &DataInfo) -> RetFnCondType1;
 }
 
 impl CondType1 for Ptm {
-    fn cond_type1(&self, _di: &Di) -> RetFnCondType1 {
+    fn cond_type1(&self, _di: &DataInfo) -> RetFnCondType1 {
         match self {
             Ptm::Ptm6(cond_ops) => {
                 let mut res = cond_ops.cond();
@@ -190,21 +190,21 @@ impl CondType1 for Ptm {
 
 // #[typetag::serde]
 impl CondType1 for Stra {
-    fn cond_type1(&self, di: &Di) -> RetFnCondType1 {
+    fn cond_type1(&self, di: &DataInfo) -> RetFnCondType1 {
         self.ptm.cond_type1(di)
     }
 }
 
 // #[typetag::serde(name = "dicondvec")]
 impl CondType1 for Stral {
-    fn cond_type1(&self, _di: &Di) -> RetFnCondType1 {
+    fn cond_type1(&self, _di: &DataInfo) -> RetFnCondType1 {
         let mut ptm_fn_vec = self
             .0
             .iter()
             .map(|x| (x.ident.clone(), x.name.clone(), x.cond_type1_lazy()))
             .collect_vec();
         Box::new(move |stream_cond_type1| {
-            let mut live_target = LiveTarget::No;
+            let mut live_target = LiveTarget::Nothing;
             ptm_fn_vec
                 .iter_mut()
                 .for_each(|(ident, stra_name, ptm_fn)| {
@@ -219,14 +219,14 @@ impl CondType1 for Stral {
 }
 
 pub trait CondType3 {
-    fn cond_type3<'a>(&'a self, di: &'a RwLock<Di>) -> RetFnCondType3<'a>;
+    fn cond_type3<'a>(&'a self, di: &'a RwLock<DataInfo>) -> RetFnCondType3<'a>;
 }
 
 impl<T> CondType3 for T 
 where
     T: CondType1,
 {
-    fn cond_type3<'a>(&'a self, di: &'a RwLock<Di>) -> RetFnCondType3<'a> {
+    fn cond_type3<'a>(&'a self, di: &'a RwLock<DataInfo>) -> RetFnCondType3<'a> {
         let mut di = di.write().unwrap();
         let pcon_ident = di.pcon.ident();
         let mut ptm_fn = self.cond_type1(&di);
@@ -269,7 +269,7 @@ pub type ApiTypeBox = Box<dyn ApiType>;
 
 #[clone_trait]
 pub trait CondType4 {
-    fn cond_type4(&self, di: &Di) -> RetFnCondType4;
+    fn cond_type4(&self, di: &DataInfo) -> RetFnCondType4;
 }
 
 
@@ -281,14 +281,14 @@ pub trait BtMatch {
 #[lazy_init(data.di)]
 #[clone_trait]
 pub trait CondType5 {
-    fn cond_type5(&self, di: &Di) -> RetFnCondType5; 
+    fn cond_type5(&self, di: &DataInfo) -> RetFnCondType5;
 }
 
 
 #[lazy_init(data.di_kline.di)]
 #[clone_trait]
 pub trait CondType6 {
-    fn cond_type6(&self, di: &Di) -> RetFnCondType6; 
+    fn cond_type6(&self, di: &DataInfo) -> RetFnCondType6;
 }
 
 // #[clone_trait]
@@ -299,17 +299,17 @@ pub trait CondType7: Send + Sync {
 #[lazy_init(data.di_kline.di)]
 #[clone_trait]
 pub trait Posi {
-    fn posi(&self, di: &Di) -> RetFnPosi;
+    fn posi(&self, di: &DataInfo) -> RetFnPosi;
 }
 
 #[lazy_init(data.di)]
 #[clone_trait]
 pub trait Ktn {
-    fn ktn(&self, di: &Di) -> RetFnKtn;
+    fn ktn(&self, di: &DataInfo) -> RetFnKtn;
 }
 
 pub trait CondState {
-    fn cond_state(&self, di: &Di) -> RetFnCondState;
+    fn cond_state(&self, di: &DataInfo) -> RetFnCondState;
 }
 
 // #[clone_trait]

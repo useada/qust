@@ -4,7 +4,7 @@ use crate::{
         part::Part,
         ta::{ForeTa, Ta},
     },
-    trade::di::Di,
+    trade::di::DataInfo,
 };
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -80,18 +80,18 @@ impl<T: ForeTaCalc> Add<T> for Pms {
 
 /* #region GetPmsFromTa */
 pub trait GetPmsFromTa: Send + Sync + std::fmt::Debug + Clone + 'static {
-    fn get_pms_from_ta(&self, di: &Di) -> Pms;
+    fn get_pms_from_ta(&self, di: &DataInfo) -> Pms;
 }
 
 impl<T: Ta + Clone> GetPmsFromTa for T {
-    fn get_pms_from_ta(&self, di: &Di) -> Pms {
+    fn get_pms_from_ta(&self, di: &DataInfo) -> Pms {
         let ta_box: Box<dyn Ta> = Box::new(self.clone());
         ta_box.get_pms_from_ta(di)
     }
 }
 
 impl GetPmsFromTa for Box<dyn Ta> {
-    fn get_pms_from_ta(&self, di: &Di) -> Pms {
+    fn get_pms_from_ta(&self, di: &DataInfo) -> Pms {
         PmsType {
             dcon: di.last_dcon(),
             part: di.last_part(),
@@ -101,14 +101,14 @@ impl GetPmsFromTa for Box<dyn Ta> {
 }
 
 impl<T: Ta + Clone> GetPmsFromTa for (Part, T) {
-    fn get_pms_from_ta(&self, di: &Di) -> Pms {
+    fn get_pms_from_ta(&self, di: &DataInfo) -> Pms {
         let ta_box: Box<dyn Ta> = Box::new(self.1.clone());
         (self.0.clone(), ta_box).get_pms_from_ta(di)
     }
 }
 
 impl GetPmsFromTa for (Part, Box<dyn Ta>) {
-    fn get_pms_from_ta(&self, di: &Di) -> Pms {
+    fn get_pms_from_ta(&self, di: &DataInfo) -> Pms {
         PmsType {
             dcon: di.last_dcon(),
             part: self.0.clone(),

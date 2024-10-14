@@ -214,12 +214,12 @@ impl ToStralBare for (&Ptm, &(Vec<Ticker>, TriBox)) {
             .pip(|x| (self.0, &x).to_stral_bare())
     }
 }
-impl ToStralBare for (&Ptm, &Di) {
+impl ToStralBare for (&Ptm, &DataInfo) {
     fn to_stral_bare(&self) -> Stral {
         (self.0, &vec![self.1.pcon.ident()]).to_stral_bare()
     }
 }
-impl ToStralBare for (&Vec<Ptm>, &Di) {
+impl ToStralBare for (&Vec<Ptm>, &DataInfo) {
     fn to_stral_bare(&self) -> Stral {
         self.0
             .map(|x| (x, self.1).to_stral_bare().0)
@@ -227,7 +227,7 @@ impl ToStralBare for (&Vec<Ptm>, &Di) {
             .to_stral_bare()
     }
 }
-impl ToStralBare for (&Ptm, &Dil) {
+impl ToStralBare for (&Ptm, &DataInfoList) {
     fn to_stral_bare(&self) -> Stral {
         (
             self.0,
@@ -236,7 +236,7 @@ impl ToStralBare for (&Ptm, &Dil) {
             .to_stral_bare()
     }
 }
-impl ToStralBare for (&Vec<Ptm>, &Dil) {
+impl ToStralBare for (&Vec<Ptm>, &DataInfoList) {
     fn to_stral_bare(&self) -> Stral {
         self.0
             .map(|x| (x, self.1).to_stral_bare().0)
@@ -309,13 +309,13 @@ impl Add<Stral> for Stral {
 
 /* #region DiStral */
 pub struct DiStra<'a, 'b> {
-    pub di: &'a Di,
+    pub di: &'a DataInfo,
     pub stra: &'b Stra,
 }
 
 #[derive(AsRef)]
 pub struct DiStral<'a> {
-    pub dil: &'a Dil,
+    pub dil: &'a DataInfoList,
     pub stral: Stral,
     pub index_vec: Vec<vuz>,
 }
@@ -429,11 +429,11 @@ impl<T: CalcStra<Output = PnlRes<N>>, N> CalcStra for Aee<T> {
 
 /* #region generate distral */
 pub trait GenDiStral {
-    fn dil<'a>(&self, dil: &'a Dil) -> DiStral<'a>;
+    fn dil<'a>(&self, dil: &'a DataInfoList) -> DiStral<'a>;
 }
 
 impl GenDiStral for Stral {
-    fn dil<'a>(&self, dil: &'a Dil) -> DiStral<'a> {
+    fn dil<'a>(&self, dil: &'a DataInfoList) -> DiStral<'a> {
         let index_vec = dil
             .dil
             .iter()
@@ -462,9 +462,9 @@ impl GenDiStral for Stral {
 
 impl<T> GenDiStral for T
 where
-    for<'c, 'b> (&'c T, &'b Dil): ToStralBare,
+    for<'c, 'b> (&'c T, &'b DataInfoList): ToStralBare,
 {
-    fn dil<'a>(&self, dil: &'a Dil) -> DiStral<'a> {
+    fn dil<'a>(&self, dil: &'a DataInfoList) -> DiStral<'a> {
         // self.to_stral(dil).dil(dil)
         (self, dil).to_stral_bare().dil(dil)
     }
@@ -531,7 +531,7 @@ impl NameForPtm for Vec<Ptm> {
     }
 }
 
-impl ToStralBare for (&Vec<NamedPtm>, &Dil) {
+impl ToStralBare for (&Vec<NamedPtm>, &DataInfoList) {
     fn to_stral_bare(&self) -> Stral {
         self.0
             .iter()

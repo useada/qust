@@ -22,7 +22,7 @@ impl PtmResState {
         let e_norm = Vec::with_capacity(len);
         Self {
             ptm_res: (h_norm, o_norm, e_norm),
-            state: NormHold::No,
+            state: NormHold::Nothing,
             open_i: None,
         }
     }
@@ -173,10 +173,10 @@ impl Exit {
 /* #region NormHold */
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub enum NormHold {
-    Lo(f32),
-    Sh(f32),
+    Long(f32),
+    Short(f32),
     #[default]
-    No,
+    Nothing,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormOpen {
@@ -194,40 +194,40 @@ pub enum NormExit {
 impl NormHold {
     pub fn add_norm_hold(&self, y: &NormHold) -> NormHold {
         match (self, y) {
-            (NormHold::No, NormHold::No) => NormHold::No,
-            (NormHold::Lo(i), NormHold::No) => NormHold::Lo(*i),
-            (NormHold::Sh(i), NormHold::No) => NormHold::Sh(*i),
-            (NormHold::No, NormHold::Lo(i)) => NormHold::Lo(*i),
-            (NormHold::No, NormHold::Sh(i)) => NormHold::Sh(*i),
-            (NormHold::Lo(i), NormHold::Sh(j)) => {
+            (NormHold::Nothing, NormHold::Nothing) => NormHold::Nothing,
+            (NormHold::Long(i), NormHold::Nothing) => NormHold::Long(*i),
+            (NormHold::Short(i), NormHold::Nothing) => NormHold::Short(*i),
+            (NormHold::Nothing, NormHold::Long(i)) => NormHold::Long(*i),
+            (NormHold::Nothing, NormHold::Short(i)) => NormHold::Short(*i),
+            (NormHold::Long(i), NormHold::Short(j)) => {
                 let res = i - j;
                 if res > 0f32 {
-                    NormHold::Lo(res)
+                    NormHold::Long(res)
                 } else {
-                    NormHold::Sh(-res)
+                    NormHold::Short(-res)
                 }
             }
-            (NormHold::Sh(i), NormHold::Lo(j)) => {
+            (NormHold::Short(i), NormHold::Long(j)) => {
                 let res = i - j;
                 if res > 0f32 {
-                    NormHold::Sh(res)
+                    NormHold::Short(res)
                 } else {
-                    NormHold::Lo(-res)
+                    NormHold::Long(-res)
                 }
             }
-            (NormHold::Lo(i), NormHold::Lo(j)) => NormHold::Lo(i + j),
-            (NormHold::Sh(i), NormHold::Sh(j)) => NormHold::Sh(i + j),
+            (NormHold::Long(i), NormHold::Long(j)) => NormHold::Long(i + j),
+            (NormHold::Short(i), NormHold::Short(j)) => NormHold::Short(i + j),
         }
     }
 
     pub fn sub_norm_hold(&self, y: &NormHold) -> (NormOpen, NormExit) {
         match (self, y) {
-            (NormHold::No, NormHold::No) => (NormOpen::No, NormExit::No),
-            (NormHold::Lo(i), NormHold::No) => (NormOpen::Lo(*i), NormExit::No),
-            (NormHold::Sh(i), NormHold::No) => (NormOpen::Sh(*i), NormExit::No),
-            (NormHold::No, NormHold::Lo(i)) => (NormOpen::No, NormExit::Sh(*i)),
-            (NormHold::No, NormHold::Sh(i)) => (NormOpen::No, NormExit::Lo(*i)),
-            (NormHold::Lo(i), NormHold::Lo(j)) => {
+            (NormHold::Nothing, NormHold::Nothing) => (NormOpen::No, NormExit::No),
+            (NormHold::Long(i), NormHold::Nothing) => (NormOpen::Lo(*i), NormExit::No),
+            (NormHold::Short(i), NormHold::Nothing) => (NormOpen::Sh(*i), NormExit::No),
+            (NormHold::Nothing, NormHold::Long(i)) => (NormOpen::No, NormExit::Sh(*i)),
+            (NormHold::Nothing, NormHold::Short(i)) => (NormOpen::No, NormExit::Lo(*i)),
+            (NormHold::Long(i), NormHold::Long(j)) => {
                 let res = i - j;
                 if res > 0. {
                     (NormOpen::Lo(res), NormExit::No)
@@ -235,7 +235,7 @@ impl NormHold {
                     (NormOpen::No, NormExit::Sh(-res))
                 }
             }
-            (NormHold::Sh(i), NormHold::Sh(j)) => {
+            (NormHold::Short(i), NormHold::Short(j)) => {
                 let res = i - j;
                 if res > 0. {
                     (NormOpen::Sh(res), NormExit::No)
@@ -243,8 +243,8 @@ impl NormHold {
                     (NormOpen::No, NormExit::Lo(-res))
                 }
             }
-            (NormHold::Lo(i), NormHold::Sh(j)) => (NormOpen::Lo(*i), NormExit::Lo(*j)),
-            (NormHold::Sh(i), NormHold::Lo(j)) => (NormOpen::Sh(*i), NormExit::Lo(*j)),
+            (NormHold::Long(i), NormHold::Short(j)) => (NormOpen::Lo(*i), NormExit::Lo(*j)),
+            (NormHold::Short(i), NormHold::Long(j)) => (NormOpen::Sh(*i), NormExit::Lo(*j)),
         }
     }
 }
@@ -254,9 +254,9 @@ impl Mul<f32> for &NormHold {
     type Output = NormHold;
     fn mul(self, rhs: f32) -> Self::Output {
         match *self {
-            NormHold::Lo(i) => NormHold::Lo(i * rhs),
-            NormHold::Sh(i) => NormHold::Sh(i * rhs),
-            NormHold::No => NormHold::No,
+            NormHold::Long(i) => NormHold::Long(i * rhs),
+            NormHold::Short(i) => NormHold::Short(i * rhs),
+            NormHold::Nothing => NormHold::Nothing,
         }
     }
 }
@@ -327,9 +327,9 @@ pub trait ToNorm<T> {
 impl ToNorm<NormHold> for Hold {
     fn to_norm(&self) -> NormHold {
         match *self {
-            Hold::Lo(_i) => NormHold::Lo(1.0),
-            Hold::Sh(_i) => NormHold::Sh(1.0),
-            Hold::No => NormHold::No,
+            Hold::Lo(_i) => NormHold::Long(1.0),
+            Hold::Sh(_i) => NormHold::Short(1.0),
+            Hold::No => NormHold::Nothing,
         }
     }
 }
@@ -359,9 +359,9 @@ pub trait ToNum {
 impl ToNum for NormHold {
     fn to_num(&self) -> f32 {
         match *self {
-            NormHold::Lo(i) => i,
-            NormHold::Sh(i) => -i,
-            NormHold::No => 0.,
+            NormHold::Long(i) => i,
+            NormHold::Short(i) => -i,
+            NormHold::Nothing => 0.,
         }
     }
 }
@@ -421,12 +421,12 @@ pub struct PosiWeight<T>(pub T, pub f32);
 impl ToNorm<NormHold> for PosiWeight<Hold> {
     fn to_norm(&self) -> NormHold {
         if self.1 == 0. {
-            return NormHold::No;
+            return NormHold::Nothing;
         }
         match self.0 {
-            Hold::Lo(_i) => NormHold::Lo(1.0 * self.1),
-            Hold::Sh(_i) => NormHold::Sh(1.0 * self.1),
-            Hold::No => NormHold::No,
+            Hold::Lo(_i) => NormHold::Long(1.0 * self.1),
+            Hold::Sh(_i) => NormHold::Short(1.0 * self.1),
+            Hold::No => NormHold::Nothing,
         }
     }
 }
@@ -456,14 +456,14 @@ impl ToNorm<NormExit> for PosiWeight<Exit> {
 }
 /* #endregion */
 
-use crate::trade::di::Di;
+use crate::trade::di::DataInfo;
 use dyn_clone::{clone_trait_object, DynClone};
 
 pub type PosiFunc<'a> = Box<dyn Fn(&NormHold, usize) -> NormHold + 'a>;
 
 #[typetag::serde(tag = "Money")]
 pub trait Money: DynClone + Send + Sync + std::fmt::Debug + 'static {
-    fn register<'a>(&'a self, di: &'a Di) -> PosiFunc<'a>;
+    fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a>;
     fn get_init_weight(&self) -> f32 {
         1.
     }
@@ -476,7 +476,7 @@ pub struct M1(pub f32);
 
 #[typetag::serde]
 impl Money for M1 {
-    fn register<'a>(&'a self, _di: &'a Di) -> PosiFunc<'a> {
+    fn register<'a>(&'a self, _di: &'a DataInfo) -> PosiFunc<'a> {
         Box::new(move |x, _y| x * self.0)
     }
     fn get_init_weight(&self) -> f32 {
@@ -492,7 +492,7 @@ pub struct M2(pub f32);
 
 #[typetag::serde]
 impl Money for M2 {
-    fn register<'a>(&'a self, di: &'a Di) -> PosiFunc<'a> {
+    fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a> {
         let c = di.close();
         let pv = di.pcon.ticker.info().pv;
         let multi = self.0 / pv;
@@ -508,7 +508,7 @@ pub struct M3(pub f32);
 
 #[typetag::serde]
 impl Money for M3 {
-    fn register<'a>(&'a self, di: &'a Di) -> PosiFunc<'a> {
+    fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a> {
         let c = di.close();
         let pv = di.pcon.ticker.info().pv;
         let multi = self.0 / pv;
@@ -516,7 +516,7 @@ impl Money for M3 {
         Box::new(move |x, y| {
             let v = &vol[y];
             if v.is_nan() {
-                NormHold::No
+                NormHold::Nothing
             } else {
                 x * (multi / c[y] / v)
             }

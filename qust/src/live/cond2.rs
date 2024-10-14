@@ -3,7 +3,7 @@ use crate::idct::pms::Pms;
 use crate::loge;
 use crate::prelude::{Iocond, LogicOps, MsigType, Ptm, ToPtm};
 use crate::sig::posi::Dire;
-use crate::trade::di::Di;
+use crate::trade::di::DataInfo;
 use chrono::Timelike;
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -15,7 +15,7 @@ use crate::sig::posi::*;
 
 #[typetag::serde]
 impl CondType6 for CondType5Box {
-    fn cond_type6(&self,di: &Di) -> RetFnCondType6 {
+    fn cond_type6(&self, di: &DataInfo) -> RetFnCondType6 {
         let mut cond_fn = self.cond_type5(di);
         Box::new(move |di_kline_o| {
             cond_fn(&di_kline_o.di_kline)
@@ -27,7 +27,7 @@ pub type Msig2 = MsigType<CondType6Box>;
 
 #[typetag::serde]
 impl CondType6 for Msig2 {
-    fn cond_type6(&self, di_init: &Di) -> RetFnCondType6 {
+    fn cond_type6(&self, di_init: &DataInfo) -> RetFnCondType6 {
         let f = self.0;
         let mut cond1 = self.1.cond_type6(di_init);
         let mut cond2 = self.2.cond_type6(di_init);
@@ -42,7 +42,7 @@ impl CondType6 for Msig2 {
 
 #[typetag::serde]
 impl CondType6 for Iocond {
-    fn cond_type6(&self,_di: &Di) -> RetFnCondType6 {
+    fn cond_type6(&self, _di: &DataInfo) -> RetFnCondType6 {
         let range = self.range.clone();
         Box::new(move |di_kline_o| {
             let data = di_kline_o.di_kline.di.calc(&self.pms);
@@ -58,7 +58,7 @@ pub struct Posi1(pub f32);
 
 #[typetag::serde]
 impl Posi for Posi1 {
-    fn posi(&self,_di: &Di) -> RetFnPosi {
+    fn posi(&self, _di: &DataInfo) -> RetFnPosi {
         Box::new(move |stream_posi| {
             stream_posi.norm_hold * self.0
         })
@@ -72,7 +72,7 @@ pub struct OpenExit {
 }
 
 impl CondState for OpenExit {
-    fn cond_state(&self, di: &Di) -> RetFnCondState {
+    fn cond_state(&self, di: &DataInfo) -> RetFnCondState {
         let mut o_fn = self.cond_open.cond_type6(di);
         let mut e_fn = self.cond_exit.cond_type6(di);
         let mut exit_i: Option<usize> = None;
@@ -112,14 +112,14 @@ pub struct DireOpenExit {
 
 #[typetag::serde]
 impl Ktn for DireOpenExit {
-    fn ktn(&self, di: &Di) -> RetFnKtn {
+    fn ktn(&self, di: &DataInfo) -> RetFnKtn {
         let mut cond_state_fn = self.open_exit.cond_state(di);
         let mut posi_fn = self.posi.posi(di);
         let hold_unit = match self.dire {
-            Dire::Lo => NormHold::Lo(1.),
-            Dire::Sh => NormHold::Sh(1.),
+            Dire::Lo => NormHold::Long(1.),
+            Dire::Sh => NormHold::Short(1.),
         };
-        let mut last_hold = NormHold::No;
+        let mut last_hold = NormHold::Nothing;
         Box::new(move |di_kline| {
             match cond_state_fn(di_kline) {
                 CondStateVar::Open => {
@@ -127,7 +127,7 @@ impl Ktn for DireOpenExit {
                     last_hold = posi_fn(&stream_posi);
                 }
                 CondStateVar::Exit => {
-                    last_hold = NormHold::No;
+                    last_hold = NormHold::Nothing;
                 }
                 CondStateVar::No => {}
             }
@@ -145,29 +145,29 @@ pub struct TwoOpenExit {
 
 #[typetag::serde]
 impl Ktn for TwoOpenExit {
-    fn ktn(&self, di: &Di) -> RetFnKtn {
+    fn ktn(&self, di: &DataInfo) -> RetFnKtn {
         let mut cond_state_fn_lo = self.open_exit_lo.cond_state(di);
         let mut cond_state_fn_sh = self.open_exit_sh.cond_state(di);
         let mut posi_fn = self.posi.posi(di);
-        let hold_unit_lo = NormHold::Lo(1.);
-        let hold_unit_sh = NormHold::Sh(1.);
-        let mut last_hold = NormHold::No;
+        let hold_unit_lo = NormHold::Long(1.);
+        let hold_unit_sh = NormHold::Short(1.);
+        let mut last_hold = NormHold::Nothing;
         Box::new(move |di_kline| {
             // loge!(crate::prelude::aler, "a {last_hold:?}");
             match last_hold {
-                NormHold::Lo(_) => {
+                NormHold::Long(_) => {
                     if let CondStateVar::Exit = cond_state_fn_lo(di_kline) {
-                        last_hold = NormHold::No;
+                        last_hold = NormHold::Nothing;
                     }
                 }
-                NormHold::Sh(_) => {
+                NormHold::Short(_) => {
                     if let CondStateVar::Exit = cond_state_fn_sh(di_kline) {
-                        last_hold = NormHold::No;
+                        last_hold = NormHold::Nothing;
                     }
                 }
                 _ => {}
             }
-            if let NormHold::No = last_hold {
+            if let NormHold::Nothing = last_hold {
                 match cond_state_fn_lo(di_kline) {
                     CondStateVar::Open => {
                         let stream_posi = StreamPosi { di_kline, norm_hold: &hold_unit_lo };
@@ -205,7 +205,7 @@ pub trait ToKtnVar {
 
 #[typetag::serde]
 impl Ktn for KtnVar {
-    fn ktn(&self, di: &Di) -> RetFnKtn {
+    fn ktn(&self, di: &DataInfo) -> RetFnKtn {
         match self {
             KtnVar::One(one) => one.ktn(di),
             KtnVar::Two(two) => two.ktn(di),
@@ -266,16 +266,16 @@ pub struct PtmResRecord {
 }
 
 pub trait BtDiKline {
-    fn bt_di_kline(&self, di: &Di) -> Vec<PtmResRecord>;
+    fn bt_di_kline(&self, di: &DataInfo) -> Vec<PtmResRecord>;
 }
 
 impl<T> BtDiKline for T
 where
     T: Ktn,
 {
-    fn bt_di_kline(&self, di: &Di) -> Vec<PtmResRecord> {
+    fn bt_di_kline(&self, di: &DataInfo) -> Vec<PtmResRecord> {
         let mut ktn_fn = self.ktn(di);
-        let mut last_hold = NormHold::No;
+        let mut last_hold = NormHold::Nothing;
         let mut res = Vec::with_capacity(di.size());
         for i in 0..di.size() {
             let di_kline = DiKline { di, i };

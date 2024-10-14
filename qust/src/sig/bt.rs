@@ -62,7 +62,7 @@ impl IntoStatusVec for DiStral<'_> {
                 let time_union = x.iter().map(|v| v.1.to_vec()).collect_vec().union_vecs();
                 let hold_vec = x.iter().fold(
                     (
-                        vec![NormHold::No; time_union.len()],
+                        vec![NormHold::Nothing; time_union.len()],
                         vec![None; time_union.len()],
                     ),
                     |mut accu, (_, t, h, p)| {
@@ -196,8 +196,8 @@ impl BackTest for MoneyCut {
     fn calc_status(&mut self, data: &SigOri) -> HoldTrans {
         let money_in = self.get_hold_money();
         let hold = self.hold.entry(data.ticker).or_insert(Status {
-            target: NormHold::No,
-            hold: NormHold::No,
+            target: NormHold::Nothing,
+            hold: NormHold::Nothing,
             price: 1f32,
         });
         hold.target = data.target.clone();
@@ -216,9 +216,9 @@ impl BackTest for MoneyCut {
                 let sub_money = net_money - left_money;
                 let sub_num = sub_money / hold.price / info.pv;
                 let hold_adj = match data.target {
-                    NormHold::Lo(x) => NormHold::Lo(x - sub_num),
-                    NormHold::Sh(x) => NormHold::Sh(x - sub_num),
-                    NormHold::No => panic!("what is going wrong?"),
+                    NormHold::Long(x) => NormHold::Long(x - sub_num),
+                    NormHold::Short(x) => NormHold::Short(x - sub_num),
+                    NormHold::Nothing => panic!("what is going wrong?"),
                 };
                 let (open, exit) = hold_adj.sub_norm_hold(&hold.hold);
                 hold.hold = hold_adj;
@@ -262,7 +262,7 @@ impl MoneyAdj {
         self.ori_record.hold.insert(
             data.ticker,
             Status {
-                target: NormHold::No,
+                target: NormHold::Nothing,
                 hold: data.target.clone(),
                 price: data.price,
             },

@@ -52,7 +52,7 @@ struct FindDayIndex(Pre);
 
 impl CalcSave for FindDayIndex {
     type Output = vuz;
-    fn calc_save(&self, di: &Di) -> Self::Output {
+    fn calc_save(&self, di: &DataInfo) -> Self::Output {
         self.0 .1.cut_index(di)
     }
 }
@@ -90,7 +90,7 @@ pub(crate) fn find_day_index_night_pre(time_vec: &[dt]) -> vuz {
     res
 }
 
-pub fn find_day_index_night_pro(time_vec: &[dt], di: &Di) -> vuz {
+pub fn find_day_index_night_pro(time_vec: &[dt], di: &DataInfo) -> vuz {
     let trading_period: TradingPeriod = di.pcon.ticker.into();
     match trading_period {
         TradingPeriod::LightNightMorn => find_day_index_night_pre(time_vec),
@@ -105,7 +105,7 @@ pub enum Part {
 }
 
 impl Part {
-    pub fn calc_part(&self, di: &Di, ta: Box<dyn Ta>) -> vv32 {
+    pub fn calc_part(&self, di: &DataInfo, ta: Box<dyn Ta>) -> vv32 {
         let index_part = Pre(di.last_dcon(), self.clone())
             .pip(FindDayIndex)
             .pip(CalcSaveWrapper)
@@ -122,7 +122,7 @@ impl Part {
         }
         accu
     }
-    fn cut_index(&self, di: &Di) -> vuz {
+    fn cut_index(&self, di: &DataInfo) -> vuz {
         match *self {
             Part::oos => {
                 let time_vec = di.date_time();

@@ -1,6 +1,6 @@
 use crate::idct::dcon::{Convert, VertBack};
 use crate::prelude::rank_day;
-use crate::trade::di::Di;
+use crate::trade::di::DataInfo;
 use qust_derive::ta_derive;
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -8,7 +8,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 
 #[typetag::serde(tag = "ForeTaCalc", content = "value")]
 pub trait ForeTaCalc: DynClone + Send + Sync + std::fmt::Debug + 'static {
-    fn fore_ta_calc(&self, da: Vec<&[f32]>, di: &Di) -> vv32;
+    fn fore_ta_calc(&self, da: Vec<&[f32]>, di: &DataInfo) -> vv32;
 }
 clone_trait_object!(ForeTaCalc);
 
@@ -46,14 +46,14 @@ impl Rank {
 
 #[typetag::serde]
 impl ForeTaCalc for Rank {
-    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         self.rank(da)
     }
 }
 
 #[typetag::serde]
 impl ForeTaCalc for Convert {
-    fn fore_ta_calc(&self, da: Vec<&[f32]>, di: &Di) -> vv32 {
+    fn fore_ta_calc(&self, da: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         // let res = (di.last_dcon(), self.clone()).vert_back(di, da);
         let res = di.last_dcon().vert_back(di, da);
         // res.unwrap().ffill()
@@ -66,7 +66,7 @@ pub struct FillCon(pub Convert);
 
 #[typetag::serde]
 impl ForeTaCalc for FillCon {
-    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         let mut res = self.0.fore_ta_calc(da, _di);
         res.iter_mut().for_each(|x| x.ffill());
         res
@@ -78,7 +78,7 @@ pub struct WithRank;
 
 #[typetag::serde]
 impl ForeTaCalc for WithRank {
-    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &Di) -> vv32 {
+    fn fore_ta_calc(&self, da: Vec<&[f32]>, _di: &DataInfo) -> vv32 {
         da.iter().fold(vec![], |mut accu, x| {
             accu.push(x.to_vec());
             accu.push(rank_day.rank1d(x));

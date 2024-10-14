@@ -16,7 +16,7 @@ pub trait BtTick {
 pub struct BtWrapper<T>(pub T);
 
 impl CondType1 for BtWrapper<Ptm> {
-    fn cond_type1(&self,di: &Di) -> RetFnCondType1 {
+    fn cond_type1(&self, di: &DataInfo) -> RetFnCondType1 {
         let b = di.calc(&self.0);
         let ptm_res = b
             .downcast_ref::<RwLock<PtmResState>>()
@@ -36,12 +36,12 @@ impl CondType1 for BtWrapper<Ptm> {
 }
 
 impl CondType1 for BtWrapper<Stral> {
-    fn cond_type1(&self, di: &Di) -> RetFnCondType1 {
+    fn cond_type1(&self, di: &DataInfo) -> RetFnCondType1 {
         let ptm_res = self
             .0
             .0
             .iter()
-            .fold(vec![LiveTarget::No; di.size()], |mut accu, x| {
+            .fold(vec![LiveTarget::Nothing; di.size()], |mut accu, x| {
                 let b = di.calc(&x.ptm);
                 let ptm_res_part = &b
                     .downcast_ref::<RwLock<PtmResState>>()
@@ -66,7 +66,7 @@ impl CondType1 for BtWrapper<Stral> {
 }
 
 pub struct DiTick<'a> {
-    pub di: &'a Di,
+    pub di: &'a DataInfo,
     pub tick: &'a [TickData],
 }
 
@@ -143,7 +143,7 @@ where
     }
 }
 
-impl CondTypeA for WithDiKline<Stral, RwLock<Di>> {
+impl CondTypeA for WithDiKline<Stral, RwLock<DataInfo>> {
     fn cond_type_a(&self) -> RetFnCondType3 {
         let mut di = self.di.write().unwrap();
         let pcon_ident = di.pcon.ident();
@@ -174,7 +174,7 @@ impl CondTypeA for WithDiKline<Stral, RwLock<Di>> {
 }
 
 
-impl CondTypeA for WithTicker<Vec<WithDiKline<Stral, RwLock<Di>>>> {
+impl CondTypeA for WithTicker<Vec<WithDiKline<Stral, RwLock<DataInfo>>>> {
     fn get_ticker(&self) -> Ticker {
         self.ticker
     }
@@ -184,7 +184,7 @@ impl CondTypeA for WithTicker<Vec<WithDiKline<Stral, RwLock<Di>>>> {
             ops_vec.push(ops.cond_type_a());
         }
         Box::new(move |stream_api| {
-            let mut live_target = LiveTarget::No;
+            let mut live_target = LiveTarget::Nothing;
             for ops in ops_vec.iter_mut() {
                 let live_target_stra = ops(stream_api);
                 live_target = live_target.add_live_target(&live_target_stra);
@@ -194,7 +194,7 @@ impl CondTypeA for WithTicker<Vec<WithDiKline<Stral, RwLock<Di>>>> {
     }
 }
 
-impl<'a, T> CondTypeA for WithDiKline<T, &'a Di>
+impl<'a, T> CondTypeA for WithDiKline<T, &'a DataInfo>
 where
     T: CondType1,
 {
@@ -211,7 +211,7 @@ where
             });
         let mut kline_range = kline_range_vec.next().unwrap();
         let di_size = di.size();
-        let mut last_live_target = LiveTarget::No;
+        let mut last_live_target = LiveTarget::Nothing;
         Box::new(move |stream_api| {
             let tick_data = stream_api.tick_data;
             let hold = stream_api.hold;
@@ -268,7 +268,7 @@ where
     }
 }
 
-impl<'a> ApiType for WithDiKline<Box<dyn CondType4>, &'a Di> {
+impl<'a> ApiType for WithDiKline<Box<dyn CondType4>, &'a DataInfo> {
     fn api_type(&self) -> RetFnApi {
         let mut di = self.di.clone();
         let mut ops_fn = self.data.cond_type4(&di);
@@ -297,7 +297,7 @@ impl<'a> ApiType for WithDiKline<Box<dyn CondType4>, &'a Di> {
 }
 
 impl BtTick for WithMatchBox<Box<dyn CondType4>> {
-    type Input<'a> = (&'a Di, &'a [TickData]);
+    type Input<'a> = (&'a DataInfo, &'a [TickData]);
     type Output = Vec<TradeInfo>;
     fn bt_tick(&self, input: Self::Input<'_>) -> Self::Output {
         let with_match_box = WithMatchBox {
@@ -372,27 +372,27 @@ impl TickerTradeInfo {
         let mut norm_hold = Vec::with_capacity(res_size);
         let mut norm_open = Vec::with_capacity(res_size);
         let mut norm_exit = Vec::with_capacity(res_size);
-        let mut state = NormHold::No;
+        let mut state = NormHold::Nothing;
         for order_action in self.trade_info_vec.into_iter() {
             let (open_now, exit_now, price) = match order_action.action {
-                OrderAction::LoOpen(i, price) => {
+                OrderAction::LongOpen(i, price) => {
                     let norm_open = NormOpen::Lo(i as f32);
-                    state = state.add_norm_hold(&NormHold::Lo(i as f32));
+                    state = state.add_norm_hold(&NormHold::Long(i as f32));
                     (norm_open, NormExit::No, price)
                 }
-                OrderAction::ShOpen(i, price) => {
+                OrderAction::ShortOpen(i, price) => {
                     let norm_open = NormOpen::Sh(i as f32);
-                    state = state.add_norm_hold(&NormHold::Sh(i as f32));
+                    state = state.add_norm_hold(&NormHold::Short(i as f32));
                     (norm_open, NormExit::No, price)
                 }
-                OrderAction::LoClose(i, price) => {
+                OrderAction::LongClose(i, price) => {
                     let norm_exit = NormExit::Lo(i as f32);
-                    state = state.add_norm_hold(&NormHold::Lo(i as f32));
+                    state = state.add_norm_hold(&NormHold::Long(i as f32));
                     (NormOpen::No, norm_exit, price)
                 }
-                OrderAction::ShClose(i, price) => {
+                OrderAction::ShortClose(i, price) => {
                     let norm_exit = NormExit::Sh(i as f32);
-                    state = state.add_norm_hold(&NormHold::Sh(i as f32));
+                    state = state.add_norm_hold(&NormHold::Short(i as f32));
                     (NormOpen::No, norm_exit, price)
                 }
                 _ => panic!("not implemetnted"),

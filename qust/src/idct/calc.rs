@@ -3,7 +3,7 @@ use super::pms::*;
 use crate::idct::dcon::Convert;
 use crate::sig::livesig::LiveSig;
 use crate::std_prelude::*;
-use crate::trade::di::{Di, PriceArc};
+use crate::trade::di::{DataInfo, PriceArc};
 use qust_derive::ta_derive;
 use qust_derive::AsRef;
 use qust_ds::prelude::*;
@@ -14,7 +14,7 @@ use std::hash::{Hash, Hasher};
 
 /* #region Calc Type */
 pub trait Calc<R>: DynClone + Send + Sync + Debug + 'static {
-    fn calc(&self, di: &Di) -> R;
+    fn calc(&self, di: &DataInfo) -> R;
     fn to_box(&self) -> Box<dyn Calc<R>>
     where
         Self: Clone + 'static,
@@ -46,7 +46,7 @@ impl<R: 'static> Eq for dyn Calc<R> {}
 /* #endregion */
 
 impl Calc<PriceArc> for Convert {
-    fn calc(&self, di: &Di) -> PriceArc {
+    fn calc(&self, di: &DataInfo) -> PriceArc {
         if di
             .data_save
             .save_dcon
@@ -69,7 +69,7 @@ impl Calc<PriceArc> for Convert {
 }
 
 impl Calc<avv32> for Pms {
-    fn calc(&self, di: &Di) -> avv32 {
+    fn calc(&self, di: &DataInfo) -> avv32 {
         if di
             .data_save
             .save_pms2d
@@ -102,7 +102,7 @@ impl Calc<avv32> for Pms {
 }
 
 impl<T: GetPmsFromTa> Calc<avv32> for T {
-    fn calc(&self, di: &Di) -> avv32 {
+    fn calc(&self, di: &DataInfo) -> avv32 {
         self.get_pms_from_ta(di).calc(di)
     }
 }
@@ -112,7 +112,7 @@ where
     T: LiveSig<R = R> + Clone + Debug,
     R: Send + Sync + 'static,
 {
-    fn calc(&self, di: &Di) -> Arc<BoxAny> {
+    fn calc(&self, di: &DataInfo) -> Arc<BoxAny> {
         if di
             .data_save
             .save_livesig
@@ -166,7 +166,7 @@ where
 
 pub trait CalcSave: Clone + Debug + Send + Sync + 'static {
     type Output;
-    fn calc_save(&self, di: &Di) -> Self::Output;
+    fn calc_save(&self, di: &DataInfo) -> Self::Output;
 }
 
 #[ta_derive]
@@ -177,7 +177,7 @@ where
     T: CalcSave<Output = R>,
     R: Send + Sync + 'static,
 {
-    fn calc(&self, di: &Di) -> ABoxAny {
+    fn calc(&self, di: &DataInfo) -> ABoxAny {
         if di
             .data_save
             .save_others

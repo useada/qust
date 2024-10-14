@@ -11,7 +11,7 @@ use qust_ds::prelude::*;
 use qust_derive::*;
 use super::prelude::PtmRes;
 
-impl Di {
+impl DataInfo {
     pub fn pnl<T: LiveSig<R = PtmResState> + AsRef<T>>(
         &self,
         sig: &T,

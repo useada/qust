@@ -70,13 +70,13 @@ impl ApiConvert<CtpOrderAction> for OrderSendWithAccount<'_> {
                 set_cstr_from_str_truncate_i8(&mut req.InvestUnitID, &self.order_input.id);
                 req.InstrumentID = *self.contract;
                 let (dire, action, num, price) = match self.order_input.order_action {
-                    No           => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_Open as i8, 0, 0.),
-                    LoOpen(i, p)    => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_Open as i8, i, p as f64),
-                    ShOpen(i, p)    => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_Open as i8, i, p as f64),
-                    LoClose(i, p)   => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_CloseToday as i8, i, p as f64),
-                    ShClose(i, p)   => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_CloseToday as i8, i, p as f64),
-                    LoCloseYd(i, p) => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_CloseYesterday as i8, i, p as f64),
-                    ShCloseYd(i, p) => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_CloseYesterday as i8, i, p as f64),
+                    Nothing => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_Open as i8, 0, 0.),
+                    LongOpen(i, p)    => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_Open as i8, i, p as f64),
+                    ShortOpen(i, p)    => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_Open as i8, i, p as f64),
+                    LongClose(i, p)   => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_CloseToday as i8, i, p as f64),
+                    ShortClose(i, p)   => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_CloseToday as i8, i, p as f64),
+                    LongCloseYd(i, p) => (THOST_FTDC_D_Buy as i8, THOST_FTDC_OF_CloseYesterday as i8, i, p as f64),
+                    ShortCloseYd(i, p) => (THOST_FTDC_D_Sell as i8, THOST_FTDC_OF_CloseYesterday as i8, i, p as f64),
                 };
                 req.Direction           = dire;
                 req.CombOffsetFlag[0]   = action;

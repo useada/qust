@@ -93,7 +93,7 @@ impl PriceTick {
         price_ori
     }
 
-    pub fn to_di(&self, r: TriBox, ticker: Ticker) -> Di {
+    pub fn to_di(&self, r: TriBox, ticker: Ticker) -> DataInfo {
         self.to_price_ori(r.clone(), ticker)
             .to_pcon(r, ticker)
             .to_di()
@@ -170,7 +170,7 @@ impl PriceOri {
             ticker,
         }
     }
-    pub fn to_di(self, ticker: Ticker, inter: TriBox) -> Di {
+    pub fn to_di(self, ticker: Ticker, inter: TriBox) -> DataInfo {
         self.to_pcon(inter, ticker).to_di()
     }
 }
@@ -271,8 +271,8 @@ impl Pcon {
         PconIdent::new(self.inter.clone(), self.ticker)
     }
 
-    pub fn to_di(self) -> Di {
-        Di {
+    pub fn to_di(self) -> DataInfo {
+        DataInfo {
             pcon: self,
             data_save: DataSave::default(),
             dcon: RwLock::new(vec![Tf(0, 1)]),
@@ -285,22 +285,22 @@ impl Pcon {
 
 /* #region Di */
 #[derive(Serialize, Deserialize, AsRef)]
-pub struct DiType<T> {
+pub struct DataInfoType<T> {
     pub pcon: T,
     #[serde(skip)]
     pub data_save: DataSave,
     pub dcon: RwLock<Vec<Convert>>,
     pub part: RwLock<Vec<Part>>,
 }
-pub type Di = DiType<Pcon>;
+pub type DataInfo = DataInfoType<Pcon>;
 
-impl Clone for Di {
+impl Clone for DataInfo {
     fn clone(&self) -> Self {
         self.pcon.clone().to_di()
     }
 }
 
-impl Di {
+impl DataInfo {
     pub fn size(&self) -> usize {
         self.pcon.price.date_time.len()
     }
@@ -323,8 +323,8 @@ impl Di {
         }
     }
 
-    pub fn repeat(&self, n: usize) -> Dil {
-        Dil {
+    pub fn repeat(&self, n: usize) -> DataInfoList {
+        DataInfoList {
             dil: vec![self.clone(); n],
         }
     }
@@ -381,7 +381,7 @@ impl Di {
     }
 }
 
-impl Debug for Di {
+impl Debug for DataInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -399,10 +399,10 @@ impl Debug for Di {
 
 /* #region Dil */
 #[derive(Serialize, Deserialize, Clone)]
-pub struct Dil {
-    pub dil: Vec<Di>,
+pub struct DataInfoList {
+    pub dil: Vec<DataInfo>,
 }
-impl Dil {
+impl DataInfoList {
     pub fn clear(&self) {
         self.dil.iter().for_each(|x| x.clear());
     }
@@ -422,7 +422,7 @@ impl Dil {
     }
 }
 
-impl Debug for Dil {
+impl Debug for DataInfoList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

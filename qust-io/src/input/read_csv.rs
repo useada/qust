@@ -1,6 +1,6 @@
 #![allow(async_fn_in_trait)]
 use csv::StringRecord;
-use qust::prelude::{dt, Di, KlineData, PriceOri, TickData, Tri};
+use qust::prelude::{dt, DataInfo, KlineData, PriceOri, TickData, Tri};
 
 
 trait ReadRecord {
@@ -188,7 +188,7 @@ impl ReadCsv for TickReader<usize> {
 // const remote_kline_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/kline_data.csv";
 // const remote_tick_url: &str = "https://raw.githubusercontent.com/baiguoname/qust/refs/heads/main/examples/git_test/tick_data.csv";
 
-pub async fn read_kline_data(file_path: &str) -> Di {
+pub async fn read_kline_data(file_path: &str) -> DataInfo {
     let di_reader: DiReader<usize> = DiReader {
         date_time: 0,
         open: 1,

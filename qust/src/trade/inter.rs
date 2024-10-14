@@ -1,5 +1,5 @@
 use crate::prelude::{gen_inter, KlineInfo, Ticker};
-use crate::trade::di::{Di, PriceArc, PriceOri, PriceTick};
+use crate::trade::di::{DataInfo, PriceArc, PriceOri, PriceTick};
 use chrono::Duration;
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -336,7 +336,7 @@ pub trait Pri {
             .num_days() as usize;
         PriceOri::with_capacity(num_days * 50)
     }
-    fn update_kline_func(&self, di: &Di, price: &PriceArc) -> UpdateFuncKline;
+    fn update_kline_func(&self, di: &DataInfo, price: &PriceArc) -> UpdateFuncKline;
 }
 /* #endregion */
 
@@ -419,7 +419,7 @@ impl Tri for InterBox {
 
 #[typetag::serde]
 impl Pri for InterBox {
-    fn update_kline_func(&self, _di: &Di, _price: &PriceArc) -> UpdateFuncKline {
+    fn update_kline_func(&self, _di: &DataInfo, _price: &PriceArc) -> UpdateFuncKline {
         let mut kline = KlineStateInter::from_intervals(self.intervals());
         Box::new(move |kline_data, price_ori, _i| {
             kline.update(kline_data);
