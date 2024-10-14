@@ -105,6 +105,7 @@ pub struct TickReader<T> {
     pub bid_price1: T,
     pub ask_volume1: T,
     pub bid_volume1: T,
+    pub contract: T,
     pub date_time_format: Option<&'static str>,
     pub has_header: bool,
 }
@@ -118,6 +119,7 @@ struct TickReaderRecord {
     bid_price1: usize,
     ask_volume1: usize,
     bid_volume1: usize,
+    contract: usize,
     date_time_format: &'static str,
 }
 
@@ -137,7 +139,7 @@ impl ReadRecord for TickReaderRecord {
             bid_price1: record[self.bid_price1].trim().parse().unwrap(),
             ask_volume1: record[self.ask_volume1].trim().parse().unwrap(),
             bid_volume1: record[self.bid_volume1].trim().parse().unwrap(),
-            contract: 1,
+            contract: record[self.contract].trim().parse().unwrap(),
         }
 
     }
@@ -156,6 +158,7 @@ impl ReadCsv for TickReader<usize> {
             bid_price1: self.bid_price1,
             ask_volume1: self.ask_volume1,
             bid_volume1: self.bid_volume1,
+            contract: self.contract,
             date_time_format: self.date_time_format.unwrap_or("%Y-%m-%dT%H:%M:%S%.f"),
         };
         let mut res = Vec::with_capacity(100000);
@@ -210,6 +213,7 @@ pub async fn read_tick_data(file_path: &str) -> Vec<TickData> {
         bid_price1: 5,
         ask_volume1: 6,
         bid_volume1: 7,
+        contract: 8,
         date_time_format: None,
         has_header:true,
     };
