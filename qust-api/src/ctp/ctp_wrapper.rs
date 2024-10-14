@@ -320,10 +320,13 @@ impl Ctp {
                     self.query_res.send_data_receive(market_data);
                 }
                 OnRspUnSubMarketData(ref p) => {
-                    loge!("ctp", "unsubmarketdata res: {}", p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
+                    loge!("ctp", "unsub marketdata res: {}", p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
+                }
+                OnRspError(ref p) => {
+                    loge!("ctp", "md rsp err, {} : {}", p.p_rsp_info.unwrap().ErrorID, p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
                 }
                 _ => {
-                    loge!("ctp", "get an unkown md spi_msg: {:?}", spi_msg);
+                    loge!("ctp", "get an unknown md spi_msg: {:?}", spi_msg);
                 }
             }
         }
@@ -467,6 +470,9 @@ impl Ctp {
                 OnRspOrderAction(ref _p) => {}
                 OnHeartBeatWarning(ref p) => {
                     loge!("ctp", "hear beat warning: {:?}", p);
+                }
+                OnRspError(ref p) => {
+                    loge!("ctp", "td rsp err, {} : {}", p.p_rsp_info.unwrap().ErrorID, p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
                 }
                 _ => {
                     loge!("ctp", "get an unkown td spi_msg: {:?}", spi_msg);

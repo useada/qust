@@ -74,16 +74,16 @@ impl Ktn for TwoMaStra {
     }
 }
 
-async fn backtest_kline() {
-    let di = read_remote_kline_data().await;
+async fn backtest_kline(instrument_id: &str) {
+    let di = read_kline_data(instrument_id).await;
     let two_ma_stra = TwoMaStra { short_period: 10, long_period: 20 };
     let two_ma_stra_ptm: Ptm = two_ma_stra.ktn_box().to_ktn().to_ptm();
     let pnl_res_dt: PnlRes<dt> = two_ma_stra_ptm.bt_kline((&di, cs2));
     pnl_res_dt.to_csv("pnl_res_dt.csv"); // save the pnl to local csv;
 }
 
-async fn backtest_tick() {
-    let tick_data = read_remote_tick_data().await;
+async fn backtest_tick(instrument_id: &str) {
+    let tick_data = read_tick_data(instrument_id).await;
     let trade_info_vec: Vec<TradeInfo> = WithMatchBox {
         data: TwoMaTickOrderAction,
         match_box: Box::new(MatchSimple),

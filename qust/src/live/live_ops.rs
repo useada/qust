@@ -165,44 +165,60 @@ impl UpdateDi {
             let mut data_receive_vec = VecDeque::default();
             data_receive_vec.append(&mut guard);
             drop(guard);
-            loge!(trade_api.ticker, "data receive: cumlative len: {}", data_receive_vec.len());
+            loge!(trade_api.ticker, "data received, cumulative len: {}", data_receive_vec.len());
             while let Some(data_receive) = data_receive_vec.pop_front() {
                 match data_receive {
                     DataReceive::TickData(tick_data) => {
-                        loge!(trade_api.ticker, "data recive ---------- tick data --------------");
+                        // loge!(trade_api.ticker, "data recive ---------- tick data --------------");
                         self.ticker_record[&trade_api.ticker].lock().unwrap().push(tick_data.clone());
                         last_tick_data = tick_data;
                         let stream_api = StreamApiType { tick_data: &last_tick_data, hold: &order_pool.hold };
-                        live_api_ops(stream_api);
-                        loge!(trade_api.ticker, "data recive ++++++++++ tick data ++++++++++++++");
+
+                        let order_action = live_api_ops(stream_api);
+                        loge!(trade_api.ticker, "stra calc a order_action: {:?}", order_action);
+
+                        match order_pool.process_order_action(order_action) {
+                            Ok(Some(order_input)) => {
+                                loge!(trade_api.ticker, "stra send a order to ctp: {:?}", order_input);
+                                trade_api.data_send.set(order_input);
+                                trade_api.data_send.notify_all();
+                            }
+                            Ok(None) => {
+                                loge!(trade_api.ticker, "stra order pool calc a none order send");
+                            }
+                            Err(e) => {
+                                loge!(trade_api.ticker, "order output error: {:?}", e);
+                            }
+                        }
+                        // loge!(trade_api.ticker, "data recive ++++++++++ tick data ++++++++++++++");
                     }
                     DataReceive::OrderReceive(data_receive) => {
-                        loge!(trade_api.ticker, "data recive ---------- data receive --------------");
+                        // loge!(trade_api.ticker, "data recive ---------- data receive --------------");
                         if let Err(e) = order_pool.update_order(data_receive) {
                             loge!(trade_api.ticker, "update err {:?}", e);
                         }
-                        loge!(trade_api.ticker, "data recive ++++++++++ data receive ++++++++++++++");
+                        // loge!(trade_api.ticker, "data recive ++++++++++ data receive ++++++++++++++");
                     } 
                 }
-                if data_receive_vec.is_empty() {
-                    loge!(trade_api.ticker, "data receive ----------: {:?}", &order_pool.hold);
-                    let stream_api = StreamApiType { tick_data: &last_tick_data, hold: &order_pool.hold };
-                    let order_action = live_api_ops(stream_api);
-                    loge!(trade_api.ticker, "stra calced a order_action: {:?}", order_action);
-                    match order_pool.process_order_action(order_action) {
-                        Ok(Some(order_input)) => {
-                            loge!(trade_api.ticker, "data receive +++++++ stra send a order to ctp: {:?}", order_input);
-                            trade_api.data_send.set(order_input);
-                            trade_api.data_send.notify_all();
-                        }
-                        Ok(None) => {
-                            loge!(trade_api.ticker, "data receive +++++++ stra order pool calc a none order send");
-                        }
-                        Err(e) => {
-                            loge!(trade_api.ticker, "data receive +++++++ order output error: {:?}", e);
-                        }
-                    }
-                }
+                // if data_receive_vec.is_empty() {
+                //     loge!(trade_api.ticker, "data receive ----------: {:?}", &order_pool.hold);
+                //     let stream_api = StreamApiType { tick_data: &last_tick_data, hold: &order_pool.hold };
+                //     let order_action = live_api_ops(stream_api);
+                //     loge!(trade_api.ticker, "stra calced a order_action: {:?}", order_action);
+                //     match order_pool.process_order_action(order_action) {
+                //         Ok(Some(order_input)) => {
+                //             loge!(trade_api.ticker, "data receive +++++++ stra send a order to ctp: {:?}", order_input);
+                //             trade_api.data_send.set(order_input);
+                //             trade_api.data_send.notify_all();
+                //         }
+                //         Ok(None) => {
+                //             loge!(trade_api.ticker, "data receive +++++++ stra order pool calc a none order send");
+                //         }
+                //         Err(e) => {
+                //             loge!(trade_api.ticker, "data receive +++++++ order output error: {:?}", e);
+                //         }
+                //     }
+                // }
             }
         }
         Some(())
