@@ -110,6 +110,8 @@ impl ApiConvert<CtpOrderAction> for OrderSendWithAccount<'_> {
 
 impl ApiConvert<DataReceive> for OrderField {
     fn api_convert(self) -> DataReceive {
+        // loge!("ctp", "ctp: OrderField --- {:?}", self);
+
         let order_status = match self.OrderStatus as u8 as char {
             '0' => OrderStatus::AllTraded,
             '1' | '3' => OrderStatus::PartTradedQueueing(self.VolumeTraded),
@@ -143,8 +145,11 @@ impl GetInstrumentID for OrderField {
 
 impl ApiConvert<DataReceive> for OnRspOrderInsertPacket {
     fn api_convert(self) -> DataReceive {
+        // loge!("ctp", "ctp: OnRspOrderInsertPacket --- {:?}", self);
+
         let order_input_field = self.p_input_order.unwrap();
-        let id = gb18030_cstr_to_str_i8(&order_input_field.OrderRef).to_string();
+        // let id = gb18030_cstr_to_str_i8(&order_input_field.OrderRef).to_string();
+        let id = gb18030_cstr_to_str_i8(&order_input_field.InvestUnitID).to_string();
         let order_status = match self.p_rsp_info.unwrap().ErrorID {
             0 => OrderStatus::Inserted,
             other => OrderStatus::InsertError(other),
@@ -180,18 +185,19 @@ impl CtpQueryRes {
     where
         T: GetInstrumentID + ApiConvert<DataReceive>,
     {
-        let istm = data.get_instrument_id();
-        let ticker = match self.contract_ticker_map.get(&istm) {
+        let instrument_id = data.get_instrument_id();
+        let ticker = match self.contract_ticker_map.get(&instrument_id) {
             Some(ticker) => ticker,
             None => {
-                loge!("ctp", "{:?} not found in ticker_contract_map", istm.to_str_v());
-                // println!("ctp: {:?} not found in ticker_contract_map", istm.to_str_v());
+                loge!("ctp", "{:?} not found in ticker_contract_map", instrument_id.to_str_v());
+                // println!("ctp: {:?} not found in ticker_contract_map", instrument_id.to_str_v());
                 return;
             }
         };
+
         let data_receive = data.api_convert();
         loge!(ticker, "ctp: {:?}", data_receive);
-        if let Some(data_receive_on) = self.contract_data_receive_map.get(&istm) {
+        if let Some(data_receive_on) = self.contract_data_receive_map.get(&instrument_id) {
             data_receive_on.push(data_receive);
             data_receive_on.notify_all();
         }

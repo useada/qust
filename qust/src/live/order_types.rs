@@ -260,15 +260,15 @@ impl OrderPool {
         order_local.order_status = order.order_status.clone();
         let is_changed = match order.order_status {
             OrderStatus::AllTraded => {
-                loge!(self.ticker, "order pool order update finished");
+                loge!(self.ticker, "order pool: order update finished");
                 self.finished_order_update(&order.id,  None)?
             }
             OrderStatus::Canceled(i) => {
-                loge!(self.ticker, "order pool order update canceled");
+                loge!(self.ticker, "order pool: order update canceled");
                 self.finished_order_update(&order.id, Some(i))?
             }
             OrderStatus::InsertError(_i) => {
-                loge!(self.ticker, "order pool order update insert error");
+                loge!(self.ticker, "order pool: order update insert error");
                 self.delete_order(&order.id)?;
                 false
             }

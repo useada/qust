@@ -6,7 +6,7 @@ use crate::idct::fore::ForeTaCalc;
 use crate::idct::part::Part::*;
 use crate::prelude::{find_day_index_night_flat, KlineState, PriBox};
 use crate::trade::di::DataInfo;
-use crate::trade::ticker::Comm;
+use crate::trade::ticker::Commission;
 use qust_ds::roll::RollFunc;
 use qust_ds::prelude::*;
 use qust_derive::*;
@@ -107,11 +107,11 @@ impl Ta for CommSlip {
         let ticker_info = di.pcon.ticker.info();
         let tz = ticker_info.tz;
         let pv = ticker_info.pv;
-        let comm_percent = match ticker_info.comm {
-            Comm::F(i) => self.0 * i / (c * pv),
-            Comm::P(i) => self.0 * i,
+        let comm_percent = match ticker_info.commission {
+            Commission::F(i) => self.0 * i / (c * pv),
+            Commission::P(i) => self.0 * i,
         };
-        let slip_percent = self.1 * ticker_info.slip * tz / c;
+        let slip_percent = self.1 * ticker_info.slippage * tz / c;
         let s = data[0].len();
         vec![
             vec![comm_percent; s],

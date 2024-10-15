@@ -54,13 +54,13 @@ impl PnlResPreInfo<'_> {
         let ticker_info = self.ticker.info();
         let tz = ticker_info.tz;
         let pv = ticker_info.pv;
-        let comm_percent = match ticker_info.comm {
-            Comm::F(i) => price.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
-            Comm::P(i) => vec![comm.0 * i; price.len()],
+        let comm_percent = match ticker_info.commission {
+            Commission::F(i) => price.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
+            Commission::P(i) => vec![comm.0 * i; price.len()],
         };
         let slip_percent = price
             .iter()
-            .map(|x| comm.1 * ticker_info.slip * tz / x)
+            .map(|x| comm.1 * ticker_info.slippage * tz / x)
             .collect_vec();
         let ptm_res = self.ptm_res;
         let money_hold = izip!(ptm_res.0.iter(), price.iter())
