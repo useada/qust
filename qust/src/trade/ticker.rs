@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use serde::{Deserialize, Serialize};
 use regex::Regex;
+use crate::prelude::Ticker::UR;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Deserialize, Serialize)]
 pub enum Ticker {
@@ -50,6 +51,7 @@ pub enum Ticker {
     cs,
     SH,
     UR,
+    IF,
 }
 
 #[derive(Debug)]
@@ -143,6 +145,7 @@ impl Ticker {
             cs => TickerInfo::new(1., 10., 0.5, F(1.5)),
             SH => TickerInfo::new(1., 30., 1., F(3.)),
             UR => TickerInfo::new(1., 20., 1., P(1e-4)),
+            IF => TickerInfo::new(0.2, 300., 0.5, P(1e-4)),
         }
     }
 }
@@ -199,6 +202,7 @@ pub const cer: Ticker = Ticker::c;
 pub const cser: Ticker = Ticker::cs;
 pub const SHer: Ticker = Ticker::SH;
 pub const URer: Ticker = Ticker::UR;
+pub const IFer: Ticker = Ticker::IF;
 
 pub trait IntoTicker {
     fn into_ticker(self) -> Option<Ticker>;
@@ -256,6 +260,7 @@ where
             "cs" => cser,
             "SH" => SHer,
             "UR" => URer,
+            "IF" => IFer,
             _ => { return None; },
         };
         Some(res)
@@ -311,6 +316,7 @@ pub const fn convert_ticker_to_str(ticker: Ticker) -> &'static str {
         cser => "cs",
         SHer => "SH",
         URer => "UR",
+        IFer => "IF",
     }
 }
 
@@ -331,7 +337,7 @@ lazy_static! {
     pub static ref tickers_all: Vec<Ticker> = vec![
         buer, eger, MAer, ler, pper, TAer, ver, ruer, eber, PFer, SAer, jmer, FGer, hcer, ier, jer,
         SMer, rber, SFer, ZCer, sser, per, yer, OIer, fuer, scer, pger, auer, ager, mer, aer, jder,
-        RMer, APer, SRer, sper, CFer, cer, cser, aler, nier, zner, cuer, sner, aer, SHer, URer,
+        RMer, APer, SRer, sper, CFer, cer, cser, aler, nier, zner, cuer, sner, aer, SHer, URer, IFer,
     ];
 }
 
