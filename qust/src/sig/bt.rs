@@ -161,7 +161,7 @@ pub struct MoneyCut {
 impl MoneyCut {
     pub fn get_hold_money(&self) -> f32 {
         self.hold.iter().fold(0f32, |mut accu, x| {
-            accu += x.1.hold.to_num().abs() * x.0.info().pv * x.1.price;
+            accu += x.1.hold.to_num().abs() * x.0.info().volume_multiple * x.1.price;
             accu
         })
     }
@@ -204,17 +204,17 @@ impl BackTest for MoneyCut {
         let left_money = self.upper - money_in;
 
         let info = data.ticker.info();
-        let multi = info.pv * data.price;
+        let multi = info.volume_multiple * data.price;
         let net_num = hold.net_num();
         let net_money = net_num * multi;
-        let profit = hold.hold.to_num() * info.pv * (data.price - hold.price);
+        let profit = hold.hold.to_num() * info.volume_multiple * (data.price - hold.price);
         hold.price = data.price;
         let order: Order =
             if (hold.hold == data.target) || (left_money <= 0f32 && net_money >= 0f32) {
                 Order::default()
             } else if left_money > 0f32 && net_money > 0f32 && left_money < net_money {
                 let sub_money = net_money - left_money;
-                let sub_num = sub_money / hold.price / info.pv;
+                let sub_num = sub_money / hold.price / info.volume_multiple;
                 let hold_adj = match data.target {
                     NormHold::Long(x) => NormHold::Long(x - sub_num),
                     NormHold::Short(x) => NormHold::Short(x - sub_num),

@@ -494,7 +494,7 @@ pub struct M2(pub f32);
 impl Money for M2 {
     fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a> {
         let c = di.close();
-        let pv = di.pcon.ticker.info().pv;
+        let pv = di.pcon.ticker.info().volume_multiple;
         let multi = self.0 / pv;
         Box::new(move |x, y| x * (multi / c[y]))
     }
@@ -510,7 +510,7 @@ pub struct M3(pub f32);
 impl Money for M3 {
     fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a> {
         let c = di.close();
-        let pv = di.pcon.ticker.info().pv;
+        let pv = di.pcon.ticker.info().volume_multiple;
         let multi = self.0 / pv;
         let vol = di.calc(crate::prelude::vol_pms.clone())[0].clone();
         Box::new(move |x, y| {

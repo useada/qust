@@ -60,35 +60,35 @@ pub enum Commission {
 
 #[derive(Debug)]
 pub struct TickerInfo {
-    pub tz: f32,
-    pub pv: f32, // 每手单位
+    pub price_tick: f32, // 最小变动价位
+    pub volume_multiple: f32, // 合约数量乘数
     pub slippage: f32, // 滑点
     pub commission: Commission, // 手续费
 }
 // pub struct TickerInfo(pub f32, pub f32, pub f32, pub Comm);
 
 impl TickerInfo {
-    const fn new(tz: f32, pv: f32, slip: f32, comm: Commission) -> Self {
-        TickerInfo { tz, pv, slippage: slip, commission: comm }
+    const fn new(price_tick: f32, volume_multiple: f32, slippage: f32, commission: Commission) -> Self {
+        TickerInfo { price_tick, volume_multiple, slippage, commission }
     }
 
     pub fn multi(&self, price: f32) -> f32 {
-        self.pv * price
+        self.volume_multiple * price
     }
 
     pub fn comm(&self, price: f32, num: f32) -> f32 {
         match self.commission {
             Commission::F(i) => num * i, // 固定额收取: 手数 * 每手固定费额
-            Commission::P(i) => num * price * self.pv * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
+            Commission::P(i) => num * price * self.volume_multiple * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
         }
     }
 
     pub fn slip(&self, num: f32) -> f32 {
-        num * self.pv * self.slippage
+        num * self.volume_multiple * self.slippage
     }
 
     pub fn trade_money(&self, num: f32, price: f32) -> f32 {
-        num * price * self.pv
+        num * price * self.volume_multiple
     }
 }
 

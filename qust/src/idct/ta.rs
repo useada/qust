@@ -105,8 +105,8 @@ impl Ta for CommSlip {
     fn calc_da(&self, data: Vec<&[f32]>, di: &DataInfo) -> vv32 {
         let c = *di.close().last().unwrap();
         let ticker_info = di.pcon.ticker.info();
-        let tz = ticker_info.tz;
-        let pv = ticker_info.pv;
+        let tz = ticker_info.price_tick;
+        let pv = ticker_info.volume_multiple;
         let comm_percent = match ticker_info.commission {
             Commission::F(i) => self.0 * i / (c * pv),
             Commission::P(i) => self.0 * i,

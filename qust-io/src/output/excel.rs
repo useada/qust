@@ -332,7 +332,7 @@ impl IntoDf for WithDi<'_, PnlRes<dt>> {
     type Value = v32;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let mut df = self.1.to_df();
-        let pv = self.0.pcon.ticker.info().pv;
+        let pv = self.0.pcon.ticker.info().volume_multiple;
         let num = izip!(df.value[2].iter(), self.0.close().iter())
             .map(|(x, y)| 1000. * x / y / pv)
             .collect_vec();

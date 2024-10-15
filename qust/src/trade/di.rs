@@ -376,7 +376,7 @@ impl DataInfo {
     }
 
     pub fn tz_profit(&self) -> f32 {
-        let tz = self.pcon.ticker.info().tz;
+        let tz = self.pcon.ticker.info().price_tick;
         10000. * tz / self.pcon.price.close.last().unwrap()
     }
 }
