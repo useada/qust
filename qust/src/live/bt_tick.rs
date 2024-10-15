@@ -419,8 +419,8 @@ impl TickerTradeInfo {
         pass_num.remove(0);
         PnlResPreInfo {
             ticker: self.ticker,
-            t,
-            c: Arc::new(c),
+            date_time: t,
+            price: Arc::new(c),
             profit, 
             comm: cs2,
             pass_num,

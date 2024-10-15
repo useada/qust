@@ -291,13 +291,14 @@ impl OrderPool {
     fn get_to_cancel_order(&self, order_action: &OrderAction) -> CancelResult {
         use OrderStatus::*;
 
-        if let OrderAction::Nothing = order_action {
-            return if !self.pool.is_empty() {
-                CancelResult::CancelAll
-            } else {
-                CancelResult::DoNothing
-            }
-        }
+        // @@ 暂时不取消所有订单
+        // if let OrderAction::Nothing = order_action {
+        //     return if !self.pool.is_empty() {
+        //         CancelResult::CancelAll
+        //     } else {
+        //         CancelResult::DoNothing
+        //     }
+        // }
 
         for order_input in self.pool.values() {
             if let  PartTradedQueueing(_) = order_input.order_status {
@@ -326,23 +327,23 @@ impl OrderPool {
             }
             CancelResult::HaveDiffOrder(order_ref) => {
                 let order_res = self.cancel_order(&order_ref)?;
-                loge!(self.ticker, "order pool: need to cancel this order: {:?}", order_res);
+                loge!(self.ticker, "order pool: cancel the old order: {:?}", order_res);
                 Ok(order_res)
             }
             CancelResult::NotHave => {
                 let order_res = self.create_order(order_action);
-                loge!(self.ticker, "order pool: need to create this order: {:?}", order_res);
+                loge!(self.ticker, "order pool: create a new order: {:?}", order_res);
                 Ok(Some(order_res))
             }
             CancelResult::CancelAll => {
-                loge!(self.ticker, "order pool: cancel all orders: {:?}", order_action);
+                loge!(self.ticker, "order pool: cancel all orders with OrderAction::{:?}", order_action);
                 match self.pool.keys().take(1).next().cloned() {
                     Some(order_id) => self.cancel_order(&order_id),
                     None => Ok(None),
                 }
             }
             CancelResult::DoNothing => {
-                loge!(self.ticker, "order pool: do nothing: {:?}", order_action);
+                loge!(self.ticker, "order pool: nothing to do with OrderAction::{:?}", order_action);
                 Ok(None)
             }
         }

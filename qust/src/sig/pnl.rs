@@ -25,9 +25,9 @@ impl DataInfo {
             .unwrap()
             .ptm_res;
         let pnl_res_pre_info = PnlResPreInfo {
-            c: self.close(),
+            price: self.close(),
             ticker: self.pcon.ticker,
-            t: self.date_time().to_vec(),
+            date_time: self.date_time().to_vec(),
             profit: self.profit(),
             comm,
             pass_num: self.pcon.price.ki.iter().skip(1).map(|ki| ((ki.pass_last + ki.pass_this) as f32 / 120.)).collect_vec(),
@@ -39,8 +39,8 @@ impl DataInfo {
 
 pub struct PnlResPreInfo<'a> {
     pub ticker: Ticker,
-    pub t: vdt,
-    pub c: av32,
+    pub date_time: vdt,
+    pub price: av32,
     pub profit: v32,
     pub comm: CommSlip,
     pub pass_num: v32,
@@ -49,27 +49,27 @@ pub struct PnlResPreInfo<'a> {
 
 impl PnlResPreInfo<'_> {
     pub fn convert_to_pnl(self) -> PnlRes<dt> {
-        let c = self.c;
+        let price = self.price;
         let comm = self.comm;
         let ticker_info = self.ticker.info();
         let tz = ticker_info.tz;
         let pv = ticker_info.pv;
         let comm_percent = match ticker_info.comm {
-            Comm::F(i) => c.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
-            Comm::P(i) => vec![comm.0 * i; c.len()],
+            Comm::F(i) => price.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
+            Comm::P(i) => vec![comm.0 * i; price.len()],
         };
-        let slip_percent = c
+        let slip_percent = price
             .iter()
             .map(|x| comm.1 * ticker_info.slip * tz / x)
             .collect_vec();
         let ptm_res = self.ptm_res;
-        let money_hold = izip!(ptm_res.0.iter(), c.iter())
+        let money_hold = izip!(ptm_res.0.iter(), price.iter())
             .map(|(x, cl)| x.to_num() * cl * pv)
             .collect_vec();
-        let money_open = izip!(ptm_res.1.iter(), c.iter())
+        let money_open = izip!(ptm_res.1.iter(), price.iter())
             .map(|(x, y)| x.to_num() * y * pv)
             .collect_vec();
-        let money_exit = izip!(ptm_res.2.iter(), c.iter())
+        let money_exit = izip!(ptm_res.2.iter(), price.iter())
             .map(|(x, y)| x.to_num() * y * pv)
             .collect_vec();
         let pr = self.profit;
@@ -126,7 +126,7 @@ impl PnlResPreInfo<'_> {
         hold.push(0.);
         //[pnl, profit, money, money_trade, cost, comm ,slip, hold]
         PnlRes(
-            self.t,
+            self.date_time,
             vec![
                 pnl_all,
                 profit,

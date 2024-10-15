@@ -54,16 +54,16 @@ pub enum Ticker {
 
 #[derive(Debug)]
 pub enum Comm {
-    F(f32),
-    P(f32),
+    F(f32), // 固定额收取
+    P(f32), // 按成交额万分比收取
 }
 
 #[derive(Debug)]
 pub struct TickerInfo {
     pub tz: f32,
-    pub pv: f32,
-    pub slip: f32,
-    pub comm: Comm,
+    pub pv: f32, // 每手单位
+    pub slip: f32, // 滑点
+    pub comm: Comm, // 手续费
 }
 // pub struct TickerInfo(pub f32, pub f32, pub f32, pub Comm);
 
@@ -78,8 +78,8 @@ impl TickerInfo {
 
     pub fn comm(&self, price: f32, num: f32) -> f32 {
         match self.comm {
-            Comm::F(i) => num * i,
-            Comm::P(i) => num * price * self.pv * i,
+            Comm::F(i) => num * i, // 固定额收取: 手数 * 每手固定费额
+            Comm::P(i) => num * price * self.pv * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
         }
     }
 

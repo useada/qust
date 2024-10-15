@@ -175,16 +175,16 @@ impl UpdateDi {
                         let stream_api = StreamApiType { tick_data: &last_tick_data, hold: &order_pool.hold };
 
                         let order_action = live_api_ops(stream_api);
-                        loge!(trade_api.ticker, "stra calc a order_action: {:?}", order_action);
+                        // loge!(trade_api.ticker, "stra calc a order_action: {:?}", order_action);
 
                         match order_pool.process_order_action(order_action) {
                             Ok(Some(order_input)) => {
-                                loge!(trade_api.ticker, "send order to ctp: {:?}", order_input);
+                                // loge!(trade_api.ticker, "send order to ctp: {:?}", order_input);
                                 trade_api.data_send.set(order_input);
                                 trade_api.data_send.notify_all();
                             }
                             Ok(None) => {
-                                loge!(trade_api.ticker, "no need send order");
+                                // loge!(trade_api.ticker, "no need send order");
                             }
                             Err(e) => {
                                 loge!(trade_api.ticker, "order error: {:?}", e);
