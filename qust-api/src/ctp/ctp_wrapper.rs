@@ -296,13 +296,14 @@ impl Ctp {
                 OnRspUserLogin(ref p) => {
                     let error_id = p.p_rsp_info.as_ref().unwrap().ErrorID;
                     let error_msg = p.p_rsp_info.as_ref().unwrap().ErrorMsg;
-                    loge!("ctp", "md login msg: {}", error_msg.to_str_0());
+
                     if error_id != 0 {
-                        loge!(level: Error, "ctp", "md login wrong");
-                        println!("ctp md login wrong: {}", error_msg.to_str_0());
+                        // loge!(level: Error, "ctp", "md login wrong");
+                        loge!(level: Error, "ctp", "md login failed: {}", error_msg.to_str_0());
+                        // println!("ctp md login failed: {}", error_msg.to_str_0());
                     } else {
                         loge!("ctp", "md login success");
-                        println!("ctp: md login success");
+                        // println!("ctp: md login success");
                     }
                 }
                 OnRspUserLogout(ref p) => {
@@ -311,16 +312,15 @@ impl Ctp {
                 OnRspSubMarketData(ref p) => {
                     let error_id = p.p_rsp_info.as_ref().unwrap().ErrorID;
                     let error_msg = p.p_rsp_info.as_ref().unwrap().ErrorMsg;
-                    loge!(
-                        "ctp", "subscribe market data res, {}: {}", 
-                        p.p_specific_instrument.unwrap().InstrumentID.to_str_0(),error_msg.to_str_0());
+                    loge!("ctp", "subscribe market data {}: {}",
+                        p.p_specific_instrument.unwrap().InstrumentID.to_str_0(), error_msg.to_str_0());
                 }
                 OnRtnDepthMarketData(ref md) => {
                     let market_data: DepthMarketDataField = md.p_depth_market_data.unwrap();
                     self.query_res.send_data_receive(market_data);
                 }
                 OnRspUnSubMarketData(ref p) => {
-                    loge!("ctp", "unsub marketdata res: {}", p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
+                    loge!("ctp", "unsubscribe market data: {}", p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
                 }
                 OnRspError(ref p) => {
                     loge!("ctp", "md rsp err, {} : {}", p.p_rsp_info.unwrap().ErrorID, p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
@@ -389,11 +389,11 @@ impl Ctp {
                     let error_msg = p.p_rsp_info.as_ref().unwrap().ErrorMsg;
                     if error_id == 0 {
                         loge!("ctp", "td login success");
-                        println!("ctp: td login success");
+                        // println!("ctp: td login success");
                         self.settlement_info_confirm();
                     } else {
                         loge!(level: Error, "ctp", "td login failed: {error_id}");
-                        println!("ctp td login wrong: {}", error_msg.to_str_0());
+                        println!("ctp td login failed: {}", error_msg.to_str_0());
                     }
                 }
                 OnRspUserLogout(ref p) => {
@@ -475,7 +475,7 @@ impl Ctp {
                     loge!("ctp", "td rsp err, {} : {}", p.p_rsp_info.unwrap().ErrorID, p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
                 }
                 _ => {
-                    loge!("ctp", "get an unkown td spi_msg: {:?}", spi_msg);
+                    loge!("ctp", "get an unknown td spi_msg: {:?}", spi_msg);
                 }
             }
         }
@@ -483,9 +483,10 @@ impl Ctp {
 
     pub fn start_spy_on_data_send(&self, trade_api: Arc<TradeApi>) -> Option<()> {
         let contract = trade_api.contract;
-        let instrumentid = contract.into_istm_id();
-        let ticker = self.query_res.contract_ticker_map.get(&instrumentid)?;
-        loge!("spy", "ctp start holder nitification: {}", contract);
+        let instrument_id = contract.into_istm_id();
+        let ticker = self.query_res.contract_ticker_map.get(&instrument_id)?;
+        loge!("spy", "ctp start holder notification: {}", contract);
+
         loop {
             let (guard, is_started) = trade_api
                 .data_send
@@ -495,19 +496,21 @@ impl Ctp {
             }
             let order_send = guard.clone();
             if order_send.id.is_empty() {
-                loge!(ticker, "windows wrong: somehow be notified when start tradeapi");
+                loge!(ticker, "windows wrong: somehow be notified when start trade api");
                 continue;
             }
-            loge!(ticker, "ctp get a order_action_price notify: {:?}", order_send);
+
+            // loge!(ticker, "ctp: on notify {:?}", order_send);
             let mut order = OrderSendWithAccount {
-                contract: &instrumentid,
+                contract: &instrument_id,
                 investor_id: &self.ca.account,
                 order_input: order_send.clone(),
                 broker_id: self.ca.broker_id.as_str(),
                 account: self.ca.account.as_str(),
             }.api_convert();
+
             let req_order_res = self.req_order(&mut order);
-            loge!(ticker, "ctp req a order, res: {req_order_res} -- {:?}", order);
+            loge!(ticker, "ctp: insert order, err={req_order_res}, {:?}", order);
         }
         Some(())
     }

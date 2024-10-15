@@ -165,7 +165,8 @@ impl UpdateDi {
             let mut data_receive_vec = VecDeque::default();
             data_receive_vec.append(&mut guard);
             drop(guard);
-            loge!(trade_api.ticker, "data received, cumulative len: {}", data_receive_vec.len());
+
+            // loge!(trade_api.ticker, "data received, cumulative len: {}", data_receive_vec.len());
             while let Some(data_receive) = data_receive_vec.pop_front() {
                 match data_receive {
                     DataReceive::TickData(tick_data) => {
@@ -194,7 +195,7 @@ impl UpdateDi {
                     }
                     DataReceive::OrderReceive(data_receive) => {
                         // loge!(trade_api.ticker, "data recive ---------- data receive --------------");
-                        loge!(trade_api.ticker, "on order: {:?}", data_receive);
+                        // loge!(trade_api.ticker, "on order: {:?}", data_receive);
                         if let Err(e) = order_pool.update_order(data_receive) {
                             loge!(trade_api.ticker, "update err {:?}", e);
                         }

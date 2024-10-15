@@ -32,14 +32,14 @@ impl TimeManager {
         let time_now = Local::now().time();
         let is_in_trading_time = self.time_intervals.iter().any(|x| x.compare_same(&time_now));
         match (self.last_running_state, is_in_trading_time) {
-            (InRunningInTradingTime, true) => Sleep(300, "in running and in trading, get in trading".into()),
+            (InRunningInTradingTime, true) => Sleep(300, "running and trading".into()),
             (InRunningInTradingTime, false) => StopToRun(NotRunningNotTradingTime),
             (InRunningNotTradingTime, true) => Impossible,
             (InRunningNotTradingTime, false) => StopToRun(NotRunningNotTradingTime),
             (NotRunningInTradingTime, true) => StartToRun(InRunningInTradingTime),
-            (NotRunningInTradingTime, false) => Sleep(300,  "not running and in trading, get no trading".into()),
+            (NotRunningInTradingTime, false) => Sleep(300,  "not running and in trading".into()),
             (NotRunningNotTradingTime, true) => StartToRun(InRunningInTradingTime),
-            (NotRunningNotTradingTime, false) => Sleep(300, "not running not in trading, get no trading".into()),
+            (NotRunningNotTradingTime, false) => Sleep(300, "not running and not trading".into()),
         }
     }
 }

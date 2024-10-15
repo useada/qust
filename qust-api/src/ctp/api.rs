@@ -185,12 +185,12 @@ impl CtpQueryRes {
             Some(ticker) => ticker,
             None => {
                 loge!("ctp", "{:?} not found in ticker_contract_map", istm.to_str_v());
-                println!("ctp: {:?} not found in ticker_contract_map", istm.to_str_v());
+                // println!("ctp: {:?} not found in ticker_contract_map", istm.to_str_v());
                 return;
             }
         };
         let data_receive = data.api_convert();
-        loge!(ticker, "ctp have a  data receive: {:?}", data_receive);
+        loge!(ticker, "ctp: {:?}", data_receive);
         if let Some(data_receive_on) = self.contract_data_receive_map.get(&istm) {
             data_receive_on.push(data_receive);
             data_receive_on.notify_all();

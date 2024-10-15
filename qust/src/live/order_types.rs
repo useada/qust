@@ -187,7 +187,7 @@ impl OrderPool {
             session_id: None,
             exchange_id: None,
         };
-        loge!(self.ticker, "order pool create a order: {:?}", new_order);
+        // loge!(self.ticker, "order pool: create a order: {:?}", new_order);
         self.pool.insert(order_id, new_order.clone());
         new_order
     }
@@ -199,11 +199,11 @@ impl OrderPool {
 
         match order.is_to_cancel {
             true => {
-                loge!(self.ticker, "cancel_order: canceling");
+                // loge!(self.ticker, "cancel_order: canceling");
                 Ok(None)
             }
             false => {
-                loge!(self.ticker, "cancel_order: set order canceling");
+                // loge!(self.ticker, "cancel_order: set order canceling");
                 order.is_to_cancel = true;
                 Ok(Some(order.clone()))
             }
@@ -245,7 +245,7 @@ impl OrderPool {
     }
 
     pub fn update_order(&mut self, order: OrderReceive) -> OrderResult<bool> {
-        loge!(self.ticker, "order pool get a order rtn from ctp: {:?}", order);
+        loge!(self.ticker, "order pool: {:?}", order);
         loge!(self.ticker, "order pool: {:?}", self.pool.iter().map(|x| x.0.to_string()).collect_vec());
         let order_local = self
             .pool
@@ -291,14 +291,13 @@ impl OrderPool {
     fn get_to_cancel_order(&self, order_action: &OrderAction) -> CancelResult {
         use OrderStatus::*;
 
-        // @@ 暂时不取消所有订单
-        // if let OrderAction::Nothing = order_action {
-        //     return if !self.pool.is_empty() {
-        //         CancelResult::CancelAll
-        //     } else {
-        //         CancelResult::DoNothing
-        //     }
-        // }
+        if let OrderAction::Nothing = order_action {
+            return if !self.pool.is_empty() {
+                CancelResult::CancelAll
+            } else {
+                CancelResult::DoNothing
+            }
+        }
 
         for order_input in self.pool.values() {
             if let  PartTradedQueueing(_) = order_input.order_status {
@@ -320,6 +319,10 @@ impl OrderPool {
             return Ok(None);
         }
 
+        if let OrderAction::Nothing = order_action {
+            return Ok(None);
+        }
+
         match self.get_to_cancel_order(&order_action) {
             CancelResult::HaveTheSameOrder => {
                 loge!(self.ticker, "order pool: have same order");
@@ -327,12 +330,12 @@ impl OrderPool {
             }
             CancelResult::HaveDiffOrder(order_ref) => {
                 let order_res = self.cancel_order(&order_ref)?;
-                loge!(self.ticker, "order pool: cancel the old order: {:?}", order_res);
+                loge!(self.ticker, "order pool: cancel the old order {:?}", order_res);
                 Ok(order_res)
             }
             CancelResult::NotHave => {
                 let order_res = self.create_order(order_action);
-                loge!(self.ticker, "order pool: create a new order: {:?}", order_res);
+                loge!(self.ticker, "order pool: create a new order {:?}", order_res);
                 Ok(Some(order_res))
             }
             CancelResult::CancelAll => {
