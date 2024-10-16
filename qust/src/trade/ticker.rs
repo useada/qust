@@ -56,8 +56,8 @@ pub enum Ticker {
 
 #[derive(Debug)]
 pub enum Commission {
-    F(f32), // 固定额收取
-    P(f32), // 按成交额万分比收取
+    Fixed(f32), // 固定额收取
+    Proportional(f32), // 按成交额万分比收取
 }
 
 #[derive(Debug)]
@@ -80,8 +80,8 @@ impl TickerInfo {
 
     pub fn comm(&self, price: f32, num: f32) -> f32 {
         match self.commission {
-            Commission::F(i) => num * i, // 固定额收取: 手数 * 每手固定费额
-            Commission::P(i) => num * price * self.volume_multiple * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
+            Commission::Fixed(i) => num * i, // 固定额收取: 手数 * 每手固定费额
+            Commission::Proportional(i) => num * price * self.volume_multiple * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
         }
     }
 
@@ -99,53 +99,53 @@ impl Ticker {
         use Commission::*;
         use Ticker::*;
         match self {
-            al => TickerInfo::new(5., 5., 1., F(3.)),
-            cu => TickerInfo::new(10., 5., 1., P(0.5e-4)),
-            ni => TickerInfo::new(10., 1., 1., F(3.)),
-            sn => TickerInfo::new(10., 1., 10., F(3.)),
-            zn => TickerInfo::new(5., 5., 1., F(3.)),
-            bu => TickerInfo::new(1., 10., 0.5, P(1e-4)),
-            eg => TickerInfo::new(1., 10., 0.5, F(3.)),
-            MA => TickerInfo::new(1., 10., 0.5, F(2.)),
-            l => TickerInfo::new(1., 5., 0.5, F(1.)),
-            pp => TickerInfo::new(1., 5., 0.5, F(1.)),
-            TA => TickerInfo::new(2., 5., 0.5, F(3.)),
-            v => TickerInfo::new(1., 5., 2.5, F(1.)),
-            ru => TickerInfo::new(5., 10., 0.3, F(3.)),
-            eb => TickerInfo::new(1., 5., 2., F(3.)),
-            PF => TickerInfo::new(2., 5., 0.5, F(3.)),
-            SA => TickerInfo::new(1., 20., 0.5, F(3.5)),
-            jm => TickerInfo::new(0.5, 60., 0.5, P(1.4e-4)),
-            FG => TickerInfo::new(1., 20., 0.5, F(3.)),
-            hc => TickerInfo::new(1., 10., 0.5, P(1e-4)),
-            i => TickerInfo::new(0.5, 100., 0.5, P(1e-4)),
-            j => TickerInfo::new(0.5, 100., 1., P(1.4e-4)),
-            SM => TickerInfo::new(2., 5., 0.5, F(3.)),
-            rb => TickerInfo::new(1., 10., 0.5, P(1e-4)),
-            SF => TickerInfo::new(2., 5., 0.5, F(3.)),
-            ZC => TickerInfo::new(0.2, 100., 0.5, F(151.)),
-            ss => TickerInfo::new(5., 5., 0.5, F(2.)),
-            p => TickerInfo::new(2., 10., 0.5, F(2.5)),
-            y => TickerInfo::new(2., 5., 0.5, F(2.)),
-            OI => TickerInfo::new(1., 10., 0.5, F(2.)),
-            fu => TickerInfo::new(1., 10., 0.5, P(0.5e-4)),
-            sc => TickerInfo::new(0.1, 1000., 0.5, F(20.)),
-            pg => TickerInfo::new(1., 20., 0.5, F(6.)),
-            au => TickerInfo::new(0.02, 1000., 0.5, F(10.)),
-            ag => TickerInfo::new(1., 15., 0.5, P(0.5e-4)),
-            m => TickerInfo::new(1., 10., 0.5, F(1.5)),
-            a => TickerInfo::new(1., 10., 0.5, F(2.)),
-            jd => TickerInfo::new(1., 10., 0.5, F(1.5)),
-            RM => TickerInfo::new(1., 10., 0.5, F(1.5)),
-            AP => TickerInfo::new(1., 10., 0.5, F(5.)),
-            SR => TickerInfo::new(1., 10., 0.5, F(1.5)),
-            sp => TickerInfo::new(2., 10., 0.5, P(0.5e-4)),
-            CF => TickerInfo::new(5., 5., 0.5, F(5.)),
-            c => TickerInfo::new(1., 10., 0.5, F(1.2)),
-            cs => TickerInfo::new(1., 10., 0.5, F(1.5)),
-            SH => TickerInfo::new(1., 30., 1., F(3.)),
-            UR => TickerInfo::new(1., 20., 1., P(1e-4)),
-            IF => TickerInfo::new(0.2, 300., 0.5, P(1e-4)),
+            al => TickerInfo::new(5., 5., 1., Fixed(3.)),
+            cu => TickerInfo::new(10., 5., 1., Proportional(0.5e-4)),
+            ni => TickerInfo::new(10., 1., 1., Fixed(3.)),
+            sn => TickerInfo::new(10., 1., 10., Fixed(3.)),
+            zn => TickerInfo::new(5., 5., 1., Fixed(3.)),
+            bu => TickerInfo::new(1., 10., 0.5, Proportional(1e-4)),
+            eg => TickerInfo::new(1., 10., 0.5, Fixed(3.)),
+            MA => TickerInfo::new(1., 10., 0.5, Fixed(2.)),
+            l => TickerInfo::new(1., 5., 0.5, Fixed(1.)),
+            pp => TickerInfo::new(1., 5., 0.5, Fixed(1.)),
+            TA => TickerInfo::new(2., 5., 0.5, Fixed(3.)),
+            v => TickerInfo::new(1., 5., 2.5, Fixed(1.)),
+            ru => TickerInfo::new(5., 10., 0.3, Fixed(3.)),
+            eb => TickerInfo::new(1., 5., 2., Fixed(3.)),
+            PF => TickerInfo::new(2., 5., 0.5, Fixed(3.)),
+            SA => TickerInfo::new(1., 20., 0.5, Fixed(3.5)),
+            jm => TickerInfo::new(0.5, 60., 0.5, Proportional(1.4e-4)),
+            FG => TickerInfo::new(1., 20., 0.5, Fixed(3.)),
+            hc => TickerInfo::new(1., 10., 0.5, Proportional(1e-4)),
+            i => TickerInfo::new(0.5, 100., 0.5, Proportional(1e-4)),
+            j => TickerInfo::new(0.5, 100., 1., Proportional(1.4e-4)),
+            SM => TickerInfo::new(2., 5., 0.5, Fixed(3.)),
+            rb => TickerInfo::new(1., 10., 0.5, Proportional(1e-4)),
+            SF => TickerInfo::new(2., 5., 0.5, Fixed(3.)),
+            ZC => TickerInfo::new(0.2, 100., 0.5, Fixed(151.)),
+            ss => TickerInfo::new(5., 5., 0.5, Fixed(2.)),
+            p => TickerInfo::new(2., 10., 0.5, Fixed(2.5)),
+            y => TickerInfo::new(2., 5., 0.5, Fixed(2.)),
+            OI => TickerInfo::new(1., 10., 0.5, Fixed(2.)),
+            fu => TickerInfo::new(1., 10., 0.5, Proportional(0.5e-4)),
+            sc => TickerInfo::new(0.1, 1000., 0.5, Fixed(20.)),
+            pg => TickerInfo::new(1., 20., 0.5, Fixed(6.)),
+            au => TickerInfo::new(0.02, 1000., 0.5, Fixed(10.)),
+            ag => TickerInfo::new(1., 15., 0.5, Proportional(0.5e-4)),
+            m => TickerInfo::new(1., 10., 0.5, Fixed(1.5)),
+            a => TickerInfo::new(1., 10., 0.5, Fixed(2.)),
+            jd => TickerInfo::new(1., 10., 0.5, Fixed(1.5)),
+            RM => TickerInfo::new(1., 10., 0.5, Fixed(1.5)),
+            AP => TickerInfo::new(1., 10., 0.5, Fixed(5.)),
+            SR => TickerInfo::new(1., 10., 0.5, Fixed(1.5)),
+            sp => TickerInfo::new(2., 10., 0.5, Proportional(0.5e-4)),
+            CF => TickerInfo::new(5., 5., 0.5, Fixed(5.)),
+            c => TickerInfo::new(1., 10., 0.5, Fixed(1.2)),
+            cs => TickerInfo::new(1., 10., 0.5, Fixed(1.5)),
+            SH => TickerInfo::new(1., 30., 1., Fixed(3.)),
+            UR => TickerInfo::new(1., 20., 1., Proportional(1e-4)),
+            IF => TickerInfo::new(0.2, 300., 0.5, Proportional(1e-4)),
         }
     }
 }

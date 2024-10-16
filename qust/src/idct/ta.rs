@@ -108,8 +108,8 @@ impl Ta for CommSlip {
         let tz = ticker_info.price_tick;
         let pv = ticker_info.volume_multiple;
         let comm_percent = match ticker_info.commission {
-            Commission::F(i) => self.0 * i / (c * pv),
-            Commission::P(i) => self.0 * i,
+            Commission::Fixed(i) => self.0 * i / (c * pv),
+            Commission::Proportional(i) => self.0 * i,
         };
         let slip_percent = self.1 * ticker_info.slippage * tz / c;
         let s = data[0].len();

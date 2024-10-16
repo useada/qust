@@ -55,8 +55,8 @@ impl PnlResPreInfo<'_> {
         let tz = ticker_info.price_tick;
         let pv = ticker_info.volume_multiple;
         let comm_percent = match ticker_info.commission {
-            Commission::F(i) => price.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
-            Commission::P(i) => vec![comm.0 * i; price.len()],
+            Commission::Fixed(i) => price.iter().map(|x| (comm.0 * i) / (x * pv)).collect_vec(),
+            Commission::Proportional(i) => vec![comm.0 * i; price.len()],
         };
         let slip_percent = price
             .iter()
