@@ -75,7 +75,7 @@ pub struct MaTa(pub usize, pub usize);
 
 #[typetag::serde]
 impl Ta for MaTa {
-    fn calc_da(&self, da:Vec< &[f32]>, _di: &DataInfo) -> vv32 {
+    fn calc_da(&self, da:Vec< &[f64]>, _di: &DataInfo) -> vv64 {
         let short_ma = da[0].roll(RollFunc::Mean, RollOps::N(self.0));
         let long_ma = da[0].roll(RollFunc::Mean, RollOps::N(self.1));
         vec![short_ma, long_ma]
@@ -87,7 +87,7 @@ pub struct TwoMaStraOpen2(pub usize, pub usize);
 
 #[typetag::serde]
 impl Cond for TwoMaStraOpen2 {
-    fn calc_da<'a>(&self, _data:avv32, di: &'a DataInfo) -> LoopSig<'a> {
+    fn calc_da<'a>(&self, _data: avv64, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.calc(MaTa(self.0, self.1));
         let short_ma = data[0].clone();
         let long_ma = data[1].clone();
@@ -102,7 +102,7 @@ pub struct TwoMaStraExit2(pub usize, pub usize);
 
 #[typetag::serde]
 impl Cond for TwoMaStraExit2 {
-    fn calc_da<'a>(&self, _data:avv32, di: &'a DataInfo) -> LoopSig<'a> {
+    fn calc_da<'a>(&self, _data: avv64, di: &'a DataInfo) -> LoopSig<'a> {
         let data = di.calc(MaTa(self.0, self.1));
         let short_ma = data[0].clone();
         let long_ma = data[1].clone();

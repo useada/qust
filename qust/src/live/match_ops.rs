@@ -52,7 +52,7 @@ impl BtMatch for MatchSimple {
 #[ta_derive2]
 pub struct MatchSimnow;
 
-fn middle_value(a: f32, b: f32, c: f32) -> f32 {
+fn middle_value(a: f64, b: f64, c: f64) -> f64 {
     if (a >= b) != (a >= c) {
         a
     } else if (b >= a) != (b >= c) {

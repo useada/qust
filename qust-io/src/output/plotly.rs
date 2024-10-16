@@ -39,7 +39,7 @@ impl PlotUtile {
             .zero_line_color(Rgba::new(180, 180, 180, 0.2))
     }
 
-    fn get_shape(x0: f32, x1: f32, y0: f32, y1: f32) -> Shape {
+    fn get_shape(x0: f64, x1: f64, y0: f64, y1: f64) -> Shape {
         Shape::new()
             .layer(ShapeLayer::Below)
             .x_ref("x")
@@ -70,7 +70,7 @@ impl PlotUtile {
         Self::change_layout(Layout::new())
     }
 
-    fn get_bar_trace<'a, 'b, F, T>(data: &'b Vec<InfoPnlRes<Stra, da>>, f: F, axis: i32) -> Box<Bar<String, f32>>
+    fn get_bar_trace<'a, 'b, F, T>(data: &'b Vec<InfoPnlRes<Stra, da>>, f: F, axis: i32) -> Box<Bar<String, f64>>
     where
         Vec<InfoPnlRes<Stra, da>>: GroupbyPnl<'a, F, Output1 = T, Output2 = da>,
         T: std::fmt::Display,
@@ -139,8 +139,8 @@ where
 impl Ply for PnlRes<da> {
     fn build_plot(&self) -> Plot {
         let (x, y) = (self.0.clone(), self.1[0].cumsum());
-        let x_position = x[(x.len() as f32 * 0.15) as usize];
-        let y_position = y[(y.len() as f32 * 0.95) as usize];
+        let x_position = x[(x.len() as f64 * 0.15) as usize];
+        let y_position = y[(y.len() as f64 * 0.95) as usize];
         let mut plot = (x, y).build_plot();
         plot.add_string(x_position, y_position, self.stats());
         plot
@@ -181,10 +181,10 @@ impl AddElement for Plot {
 }
 
 
-pub struct OrderFlowSinglePlot(pub vv32);
+pub struct OrderFlowSinglePlot(pub vv64);
 
 impl OrderFlowSinglePlot {
-    fn plot(&self, on: (f32, f32, f32), color_range: (f32, f32)) -> (Box<Scatter<f32, f32>>, Vec<Shape>) {
+    fn plot(&self, on: (f64, f64, f64), color_range: (f64, f64)) -> (Box<Scatter<f64, f64>>, Vec<Shape>) {
         use super::color::*;
         let (x0, x1, x2) = on;
         let mut g = self.0[0].clone();
@@ -231,7 +231,7 @@ impl Ply for OrderFlowVecPlot {
         let mut plot = Plot::new();
         let mut layout = Layout::new();
         for (i, of) in self.0.iter().enumerate() {
-            let i = i as f32;
+            let i = i as f64;
             let (trace_text, shape_vec) = of.plot((i - 0.3, i, i + 0.3), (-200., 200.));
             plot.add_trace(trace_text);
             shape_vec
@@ -250,8 +250,8 @@ pub struct StraPnlVec(pub Vec<InfoPnlRes<Stra, dt>>);
 
 impl Ply for StraPnlVec {
     fn build_plot(&self) -> Plot {
-        type ScatterType = Scatter<da, f32>;
-        type BarType = Bar<Ticker, f32>;
+        type ScatterType = Scatter<da, f64>;
+        type BarType = Bar<Ticker, f64>;
         use Visible::*;
         let pnl_da = self.0.da();
         let mut plot = pnl_da.sum().build_plot();
@@ -360,7 +360,7 @@ where
     }
 }
 
-impl Ply for BarWrapper<Vec<f32>> {
+impl Ply for BarWrapper<Vec<f64>> {
     fn build_plot(&self) -> Plot {
         BarWrapper(((0..self.0.len()).collect_vec(), self.0.clone()))
             .build_plot()

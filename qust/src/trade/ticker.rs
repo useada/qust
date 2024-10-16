@@ -56,40 +56,40 @@ pub enum Ticker {
 
 #[derive(Debug)]
 pub enum Commission {
-    Fixed(f32), // 固定额收取
-    Proportional(f32), // 按成交额万分比收取
+    Fixed(f64), // 固定额收取
+    Proportional(f64), // 按成交额万分比收取
 }
 
 #[derive(Debug)]
 pub struct TickerInfo {
-    pub price_tick: f32, // 最小变动价位
-    pub volume_multiple: f32, // 合约数量乘数
-    pub slippage: f32, // 滑点
+    pub price_tick: f64, // 最小变动价位
+    pub volume_multiple: f64, // 合约数量乘数
+    pub slippage: f64, // 滑点
     pub commission: Commission, // 手续费
 }
-// pub struct TickerInfo(pub f32, pub f32, pub f32, pub Comm);
+// pub struct TickerInfo(pub f64, pub f64, pub f64, pub Comm);
 
 impl TickerInfo {
-    const fn new(price_tick: f32, volume_multiple: f32, slippage: f32, commission: Commission) -> Self {
+    const fn new(price_tick: f64, volume_multiple: f64, slippage: f64, commission: Commission) -> Self {
         TickerInfo { price_tick, volume_multiple, slippage, commission }
     }
 
-    pub fn multi(&self, price: f32) -> f32 {
+    pub fn multi(&self, price: f64) -> f64 {
         self.volume_multiple * price
     }
 
-    pub fn comm(&self, price: f32, num: f32) -> f32 {
+    pub fn comm(&self, price: f64, num: f64) -> f64 {
         match self.commission {
             Commission::Fixed(i) => num * i, // 固定额收取: 手数 * 每手固定费额
             Commission::Proportional(i) => num * price * self.volume_multiple * i, // 按成交额万分比收取: 手数 * 价格 * 单位 * 合约费率
         }
     }
 
-    pub fn slip(&self, num: f32) -> f32 {
+    pub fn slip(&self, num: f64) -> f64 {
         num * self.volume_multiple * self.slippage
     }
 
-    pub fn trade_money(&self, num: f32, price: f32) -> f32 {
+    pub fn trade_money(&self, num: f64, price: f64) -> f64 {
         num * price * self.volume_multiple
     }
 }

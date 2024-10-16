@@ -6,7 +6,7 @@ use qust::prelude::*;
 use plotters::{
     coord::{
         ranged1d::{DefaultFormatting, KeyPointHint, AsRangedCoord, ValueFormatter},
-        types::RangedCoordf32,
+        types::RangedCoordf64,
         Shift,
         CoordTranslate, ReverseCoordTranslate,
     },
@@ -134,10 +134,10 @@ mod my_axis {
     #[derive(Clone)]
     pub struct AxisNumber<'a, T>(pub &'a [T]);
 
-    impl<'a> Ranged for AxisNumber<'a, f32>
+    impl<'a> Ranged for AxisNumber<'a, f64>
     {
         type FormatOption = NoDefaultFormatting;
-        type ValueType = f32;
+        type ValueType = f64;
 
         fn range(&self) -> Range<Self::ValueType> {
             self.0.agg(RollFunc::Min) .. self.0.agg(RollFunc::Max)
@@ -168,13 +168,13 @@ mod my_axis {
             let step = ((e - s) / 5.).max(1.);
             (s as usize .. e as usize)
                 .step_by(step as usize)
-                .map(|x| x as f32)
+                .map(|x| x as f64)
                 .collect_vec()
         }
     }
 
-    impl ValueFormatter<f32> for AxisNumber<'_, f32> {
-        fn format_ext(&self, value: &f32) -> String {
+    impl ValueFormatter<f64> for AxisNumber<'_, f64> {
+        fn format_ext(&self, value: &f64) -> String {
             let v = self.0.agg(RollFunc::Max).abs().max(self.0.agg(RollFunc::Min).abs());
             let (div_num, suffix) = match (v * 10_000.) as usize {
                 0..=10                      => (0.0001,     "bp".to_string()),
@@ -325,7 +325,7 @@ fn layout_size(x: u32, y: u32) -> (u32, u32) {
         3..=5 => 400,
         _ => 280,
     };
-    let sum_row_len = (((single_col_size as f32) / 1.8f32) as u32) * x;
+    let sum_row_len = (((single_col_size as f64) / 1.8f64) as u32) * x;
     let sum_col_len = single_col_size * y;
     (sum_col_len, sum_row_len)
 }
@@ -344,21 +344,21 @@ impl<T: BuildChart<X, Y>, X, Y> Plot<i32, X, Y> for T {
     }
 }
 
-impl Plot<i32, da, f32> for PnlRes<da> {
+impl Plot<i32, da, f64> for PnlRes<da> {
     fn plot(&self) -> evcxr::SVGWrapper {
         let p: PlotWithText<_, _> = (&self.0, self.1[0].cumsum(), None, self.stats().to_string()).into();
         p.plot()
     }
 }
 
-impl Plot<i32, dt, f32> for PnlRes<dt> {
+impl Plot<i32, dt, f64> for PnlRes<dt> {
     fn plot(&self) -> evcxr::SVGWrapper {
         let p: PlotWithText<_, _> = (&self.0, self.1[0].cumsum()).into();
         p.plot()
     }
 }
 
-impl<T> Plot<usize, da, f32> for T
+impl<T> Plot<usize, da, f64> for T
 where
     for<'a> PnlRes<da>: From<&'a T>,
     T: 'static,
@@ -387,10 +387,10 @@ where
     }
 }
 
-impl<T, X> Aplot<X, f32> for Vec<InfoPnlRes<T, X>>
+impl<T, X> Aplot<X, f64> for Vec<InfoPnlRes<T, X>>
 where
     T: std::fmt::Display,
-    for<'a> PlotWithText<&'a [X], Vec<f32>>: BuildChart<X, f32> + GetAxis<X, f32>,
+    for<'a> PlotWithText<&'a [X], Vec<f64>>: BuildChart<X, f64> + GetAxis<X, f64>,
     X: Clone + PartialOrd + 'static,
     for<'a> MyAxis<'a, X>: Ranged<ValueType = X> + ValueFormatter<X>,
 {
@@ -405,7 +405,7 @@ where
     }
 }
 
-impl Aplot<da, f32> for [PnlRes<da>] {
+impl Aplot<da, f64> for [PnlRes<da>] {
     fn aplot(&self, col: usize) -> evcxr::SVGWrapper {
         self.iter()
             .map(|x| InfoPnlRes(estring, x.clone()))
@@ -417,8 +417,8 @@ impl Aplot<da, f32> for [PnlRes<da>] {
 type InfoOutput = (Option<String>, Option<String>);
 pub trait PnlWithInfo {
     type Input;
-    fn with_info(&self, f: impl Fn(&Self::Input) -> InfoOutput) -> Vec<PlotWithText<&Vec<da>, v32>>;
-    fn with_stats(&self) -> Vec<PlotWithText<&Vec<da>, v32>>
+    fn with_info(&self, f: impl Fn(&Self::Input) -> InfoOutput) -> Vec<PlotWithText<&Vec<da>, v64>>;
+    fn with_stats(&self) -> Vec<PlotWithText<&Vec<da>, v64>>
     where
         Self::Input: Stats,
     {
@@ -428,7 +428,7 @@ pub trait PnlWithInfo {
 
 impl<T> PnlWithInfo for [InfoPnlRes<T, da>] {
     type Input = InfoPnlRes<T, da>;
-    fn with_info(&self, f: impl Fn(&Self::Input) -> (Option<String>, Option<String>)) -> Vec<PlotWithText<&Vec<da>, v32>>  {
+    fn with_info(&self, f: impl Fn(&Self::Input) -> (Option<String>, Option<String>)) -> Vec<PlotWithText<&Vec<da>, v64>>  {
         self.iter()
             .map(|x| {
                 let (c1, c2) = f(x);
@@ -444,7 +444,7 @@ impl<T> PnlWithInfo for [InfoPnlRes<T, da>] {
 }
 impl PnlWithInfo for [PnlRes<da>] {
     type Input = PnlRes<da>;
-    fn with_info(&self, f: impl Fn(&Self::Input) -> (Option<String>, Option<String>)) -> Vec<PlotWithText<&Vec<da>, v32>>  {
+    fn with_info(&self, f: impl Fn(&Self::Input) -> (Option<String>, Option<String>)) -> Vec<PlotWithText<&Vec<da>, v64>>  {
         self.iter()
             .map(|x| {
                 let (c1, c2) = f(x);
@@ -500,7 +500,7 @@ lazy_static! {
 
 
 pub trait ShortPlot<'a>: AsRef<DiStral<'a>> {
-    fn short_calc1(&self, x1: CommSlip, x2: f32, x3: usize) -> PnlRes<da> {
+    fn short_calc1(&self, x1: CommSlip, x2: f64, x3: usize) -> PnlRes<da> {
         self.as_ref()
             .calc(Aee(x1.tuple()))
             .pnl_modify(150, x2)

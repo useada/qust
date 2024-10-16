@@ -30,7 +30,7 @@ impl DataInfo {
             date_time: self.date_time().to_vec(),
             profit: self.profit(),
             comm,
-            pass_num: self.pcon.price.ki.iter().skip(1).map(|ki| ((ki.pass_last + ki.pass_this) as f32 / 120.)).collect_vec(),
+            pass_num: self.pcon.price.ki.iter().skip(1).map(|ki| ((ki.pass_last + ki.pass_this) as f64 / 120.)).collect_vec(),
             ptm_res,
         };
         pnl_res_pre_info.convert_to_pnl()
@@ -40,10 +40,10 @@ impl DataInfo {
 pub struct PnlResPreInfo<'a> {
     pub ticker: Ticker,
     pub date_time: vdt,
-    pub price: av32,
-    pub profit: v32,
+    pub price: av64,
+    pub profit: v64,
     pub comm: CommSlip,
-    pub pass_num: v32,
+    pub pass_num: v64,
     pub ptm_res: &'a PtmRes,
 }
 
@@ -73,7 +73,7 @@ impl PnlResPreInfo<'_> {
             .map(|(x, y)| x.to_num() * y * pv)
             .collect_vec();
         let pr = self.profit;
-        let hold_lag = money_hold.lag((1, 0f32));
+        let hold_lag = money_hold.lag((1, 0f64));
         let profit = pr
             .iter()
             .zip(hold_lag.iter())
@@ -142,7 +142,7 @@ impl PnlResPreInfo<'_> {
 }
 
 #[derive(Clone, Serialize, Deserialize, AsRef)]
-pub struct PnlRes<T>(pub Vec<T>, pub vv32);
+pub struct PnlRes<T>(pub Vec<T>, pub vv64);
 
 impl<T> PnlRes<T> {
     pub fn concat(&mut self, mut other: Self) {
@@ -223,7 +223,7 @@ where
             .collect_vec()
             .union_pnl_res();
         let pnl_vec_value = pnl_vec_union.iter().fold(
-            vec![vec![0f32; pnl_vec_union[0].0.len()]; pnl_vec_union[0].1.len()],
+            vec![vec![0f64; pnl_vec_union[0].0.len()]; pnl_vec_union[0].1.len()],
             |mut res, row| {
                 izip!(res.iter_mut(), row.1.iter())
                     .enumerate()
@@ -281,11 +281,11 @@ where
                 .map(|(i, data)| {
                     let g = ri.reindex(data);
                     if i == 2 {
-                        let mut z = g.ffill(0f32);
-                        z.fillna(0f32);
+                        let mut z = g.ffill(0f64);
+                        z.fillna(0f64);
                         z
                     } else {
-                        g.fillna(0f32)
+                        g.fillna(0f64)
                     }
                 })
                 .collect::<Vec<_>>();
@@ -308,7 +308,7 @@ where
             .union_vecs();
         self.map(|x| {
             let ri = Reindex::new(&x.as_ref().0, &time_vec);
-            let value_vec = x.as_ref().1.map(|x| ri.reindex(x).fillna(0f32));
+            let value_vec = x.as_ref().1.map(|x| ri.reindex(x).fillna(0f64));
             PnlRes(time_vec.clone(), value_vec)
         })
     }
@@ -354,7 +354,7 @@ where
             .collect_vec()
             .union_pnl_res();
         let pnl_vec_value = pnl_vec_union.iter().fold(
-            vec![vec![0f32; pnl_vec_union[0].0.len()]; pnl_vec_union[0].1.len()],
+            vec![vec![0f64; pnl_vec_union[0].0.len()]; pnl_vec_union[0].1.len()],
             |mut res, row| {
                 izip!(res.iter_mut(), row.1.iter()).for_each(|(x, y)| {
                     izip!(x.iter_mut(), y.iter()).for_each(|(x_i, y_i)| *x_i += y_i);
@@ -394,9 +394,9 @@ impl From<&Vec<PnlRes<dt>>> for PnlRes<da> {
     }
 }
 
-impl<T: Clone> Mul<f32> for &PnlRes<T> {
+impl<T: Clone> Mul<f64> for &PnlRes<T> {
     type Output = PnlRes<T>;
-    fn mul(self, rhs: f32) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         PnlRes(
             self.0.clone(),
             self.1
@@ -407,9 +407,9 @@ impl<T: Clone> Mul<f32> for &PnlRes<T> {
     }
 }
 
-impl<T: Clone> Mul<&Vec<f32>> for &PnlRes<T> {
+impl<T: Clone> Mul<&Vec<f64>> for &PnlRes<T> {
     type Output = PnlRes<T>;
-    fn mul(self, rhs: &Vec<f32>) -> Self::Output {
+    fn mul(self, rhs: &Vec<f64>) -> Self::Output {
         PnlRes(
             self.0.clone(),
             self.1

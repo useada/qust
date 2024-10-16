@@ -6,17 +6,17 @@ use ndarray::{Array2, Axis};
 
 #[derive(Clone)]
 pub struct StatsRes {
-    pub ret: f32,
-    pub sr: f32,
-    pub cratio: f32,
-    pub profit: f32,
-    pub comm: f32,
-    pub slip: f32,
-    pub to_day: f32,
-    pub to_sum: f32,
-    pub hold: f32,
-    pub std: f32,
-    pub mdd: f32,
+    pub ret: f64,
+    pub sr: f64,
+    pub cratio: f64,
+    pub profit: f64,
+    pub comm: f64,
+    pub slip: f64,
+    pub to_day: f64,
+    pub to_sum: f64,
+    pub hold: f64,
+    pub std: f64,
+    pub mdd: f64,
 }
 
 impl std::fmt::Debug for StatsRes {
@@ -56,7 +56,7 @@ impl Stats for  PnlRes<da> {
             .map(|(x, y)| if *y == 0. { 0. } else { x / 2. / y })
             .collect_vec();
         let money_trade = self.1[3].agg(RollFunc::Sum) / 2.;
-        let ret = ret_annu(self) * 100f32;
+        let ret = ret_annu(self) * 100f64;
         let sr = self.sr();
         let cratio = cratio(&self.1[0]);
         StatsRes {
@@ -81,12 +81,12 @@ pub trait Stats2 {
 
 impl Stats2 for PnlRes<da> {
     fn stats2(&self) -> StatsRes {
-        let x = 360_0000f32;
+        let x = 360_0000f64;
         let tover = izip!(self.1[3].iter(), self.1[2].iter())
             .map(|(x, y)| if *y == 0. { 0. } else { x / 2. / y })
             .collect_vec();
         let money_trade = self.1[3].agg(RollFunc::Sum) / 2.;
-        let year_num = (*self.0.last().unwrap() - self.0[0]).num_days() as f32 / 365.;
+        let year_num = (*self.0.last().unwrap() - self.0[0]).num_days() as f64 / 365.;
         let ret = 100. * self.1[0].sum() / year_num / x;
         let sr = self.sr();
         let mdd_x = max_drawdown(&self.1[0]);
@@ -131,48 +131,48 @@ where
 
 /* #region Sr */
 pub trait Sr {
-    fn sr(&self) -> f32;
+    fn sr(&self) -> f64;
 }
 
-impl Sr for [f32] {
-    fn sr(&self) -> f32 {
-        240f32.sqrt() * self.agg(RollFunc::Mean) / self.agg(RollFunc::Std)
+impl Sr for [f64] {
+    fn sr(&self) -> f64 {
+        240f64.sqrt() * self.agg(RollFunc::Mean) / self.agg(RollFunc::Std)
     }
 }
 
 impl Sr for PnlRes<da> {
-    fn sr(&self) -> f32 {
+    fn sr(&self) -> f64 {
         self.1[0].sr()
     }
 }
 
 impl Sr for PnlRes<dt> {
-    fn sr(&self) -> f32 {
+    fn sr(&self) -> f64 {
         self.da().sr()
     }
 }
 /* #endregion */
-pub fn ret_annu(pnl: &PnlRes<da>) -> f32 {
+pub fn ret_annu(pnl: &PnlRes<da>) -> f64 {
     let thre_ = pnl.1[2].quantile(0.02);
     let mul = pnl.1[2]
         .rolling(150)
         .map(|x| {
             let q = x.quantile(0.9);
-            if q <= thre_ { 0f32 } else { 100f32 / q }
+            if q <= thre_ { 0f64 } else { 100f64 / q }
         })
         .collect_vec()
         .lag(1);
     let mut pnl_new = pnl * &mul;
-    pnl_new.1[2] = vec![100f32; pnl_new.1[2].len()];
+    pnl_new.1[2] = vec![100f64; pnl_new.1[2].len()];
     let pnl_sum = pnl_new.1[0].iter()
-        .map(|x| x / 100f32)
-        .sum::<f32>();
+        .map(|x| x / 100f64)
+        .sum::<f64>();
     let k = (*pnl_new.0.last().unwrap() - *pnl_new.0.first().unwrap())
-        .num_days() as f32 / 365f32;
+        .num_days() as f64 / 365f64;
     pnl_sum / k
 }
 
-fn max_drawdown(x: &[f32]) -> f32 {
+fn max_drawdown(x: &[f64]) -> f64 {
     let pnl_cum = x.cumsum();
     let t =  pnl_cum.iter()
         .scan(pnl_cum[0], |accu, x| {
@@ -188,16 +188,16 @@ fn max_drawdown(x: &[f32]) -> f32 {
     max_spread.max()
 }
 
-pub fn cratio(data: &[f32]) -> f32 {
-    240f32 * data.mean() / max_drawdown(data)
+pub fn cratio(data: &[f64]) -> f64 {
+    240f64 * data.mean() / max_drawdown(data)
 }
 
 pub struct Acc;
 
 impl CalcStra for Acc {
-    type Output = (f32, f32);
+    type Output = (f64, f64);
     fn calc_stra(&self, distra: &DiStra) -> Self::Output {
-        let stat = distra.di.pnl(&distra.stra.ptm, CommSlip(1f32, 0f32)).stats();
+        let stat = distra.di.pnl(&distra.stra.ptm, CommSlip(1f64, 0f64)).stats();
         (stat.profit, stat.to_sum)
     }
 }
@@ -227,10 +227,10 @@ where
 }
 
 pub trait Corr2<T>: AsRef<[PnlRes<T>]> {
-    fn e(&self) -> v32 {
+    fn e(&self) -> v64 {
         self.as_ref().map(|x| x.1[0].agg(RollFunc::Mean))
     }
-    fn corr(&self) -> Array2<f32> {
+    fn corr(&self) -> Array2<f64> {
         self
             .as_ref()
             .iter()
@@ -240,7 +240,7 @@ pub trait Corr2<T>: AsRef<[PnlRes<T>]> {
             .pearson_correlation()
             .unwrap()
     }
-    fn cov(&self) -> Array2<f32> {
+    fn cov(&self) -> Array2<f64> {
         self
             .as_ref()
             .iter()
@@ -250,7 +250,7 @@ pub trait Corr2<T>: AsRef<[PnlRes<T>]> {
             .cov(1.)
             .unwrap()
     }
-    fn delta(&self) -> vv32 {
+    fn delta(&self) -> vv64 {
         let k = self.cov();
         k.dot(&k)
             .axis_iter(Axis(0))
@@ -261,11 +261,11 @@ pub trait Corr2<T>: AsRef<[PnlRes<T>]> {
 impl<T> Corr2<T> for [PnlRes<T>] {}
 
 pub trait CorrFilter {
-    fn corr_filter(&self, thre: f32) -> vuz;
+    fn corr_filter(&self, thre: f64) -> vuz;
 }
 
 impl CorrFilter for [PnlRes<da>] {
-    fn corr_filter(&self, thre: f32) -> vuz {
+    fn corr_filter(&self, thre: f64) -> vuz {
         let corr_matrix = self.corr();
         let l = corr_matrix.shape()[0];
         let mut res = vec![0];
@@ -283,13 +283,13 @@ impl CorrFilter for [PnlRes<da>] {
 
 pub trait PnlModify {
     type Output;
-    fn pnl_modify(&self, n: usize, i: f32) -> Self::Output;
-    fn pnl_multi(&self, i: f32) -> Self::Output;
+    fn pnl_modify(&self, n: usize, i: f64) -> Self::Output;
+    fn pnl_multi(&self, i: f64) -> Self::Output;
 }
 
 impl PnlModify for Vec<InfoPnlRes<Stra, dt>> {
     type Output = Vec<InfoPnlRes<Stra, dt>>;
-    fn pnl_modify(&self, i: usize, n: f32) -> Self::Output {
+    fn pnl_modify(&self, i: usize, n: f64) -> Self::Output {
         let m = self
             .groupby(&|x: &Stra| -> Ticker { x.ident.ticker }, |x| x.sum())
             .pnl_sum_between_ticker()
@@ -301,7 +301,7 @@ impl PnlModify for Vec<InfoPnlRes<Stra, dt>> {
         self.map(|x| InfoPnlRes(x.0.clone(), &x.1 * m))
     }
 
-    fn pnl_multi(&self, i: f32) -> Self::Output {
+    fn pnl_multi(&self, i: f64) -> Self::Output {
         self.map(|x| InfoPnlRes(x.0.clone(), &x.1 * i))
     }
 }
@@ -338,8 +338,8 @@ pub trait CheckRes {
 pub struct CheckList1 {
     pub ori_res: Vec<StatsRes>,
     pub min_trade_num: usize,
-    pub promotion_thre: f32,
-    pub promotion_percent: f32, 
+    pub promotion_thre: f64,
+    pub promotion_percent: f64,
 }
 
 
@@ -354,29 +354,29 @@ impl CheckRes for CheckList1 {
                 }
                 accu
             });
-        promotion_size as f32 / self.ori_res.len() as f32 > self.promotion_percent
+        promotion_size as f64 / self.ori_res.len() as f64 > self.promotion_percent
     }
 }
 
-pub fn check_info_ticker(data: &[InfoPnlRes<Stra, da>]) -> f32 {
+pub fn check_info_ticker(data: &[InfoPnlRes<Stra, da>]) -> f64 {
     let mut kk = data.iter().map(|x| &x.1).collect_vec();
     kk.sort_by(|a, b| a.sr().partial_cmp(&b.sr()).unwrap());
     kk.nlast(20).sum().sr()
 }
 
 
-pub fn corr_month(pnl1: &PnlRes<da>, pnl2: &PnlRes<da>) -> f32 {
+pub fn corr_month(pnl1: &PnlRes<da>, pnl2: &PnlRes<da>) -> f64 {
     let t_vec = pnl1.0.map(|x| x.format("%Y%m").to_string());
     let grp = Grp(t_vec);
-    let p1 = grp.apply(&pnl1.1[0], |x| x.iter().sum::<f32>()).1;
-    let p2 = grp.apply(&pnl2.1[0], |x| x.iter().sum::<f32>()).1;
+    let p1 = grp.apply(&pnl1.1[0], |x| x.iter().sum::<f64>()).1;
+    let p2 = grp.apply(&pnl2.1[0], |x| x.iter().sum::<f64>()).1;
     [p1, p2]
         .to_array()
         .pearson_correlation()
         .unwrap()[[0, 1]]
 }
 
-pub fn corr_weeks(pnl1: &PnlRes<da>, pnl2: &PnlRes<da>, n: usize) -> f32 {
+pub fn corr_weeks(pnl1: &PnlRes<da>, pnl2: &PnlRes<da>, n: usize) -> f64 {
     let l = pnl1.0.len();
     let t_vec = (0..l)
         .step_by(n)
@@ -388,8 +388,8 @@ pub fn corr_weeks(pnl1: &PnlRes<da>, pnl2: &PnlRes<da>, n: usize) -> f32 {
             accu
         });
     let grp = Grp(t_vec);
-    let p1 = grp.apply(&pnl1.1[0], |x| x.iter().sum::<f32>()).1;
-    let p2 = grp.apply(&pnl2.1[0], |x| x.iter().sum::<f32>()).1;
+    let p1 = grp.apply(&pnl1.1[0], |x| x.iter().sum::<f64>()).1;
+    let p2 = grp.apply(&pnl2.1[0], |x| x.iter().sum::<f64>()).1;
     [p1, p2]
         .to_array()
         .pearson_correlation()

@@ -65,11 +65,11 @@ impl Convert {
                 let open_price = price.close.ema(*w);
                 let mut open_price = open_price.lag(1);
                 open_price[0] = open_price[1];
-                let high_price: Vec<f32> =
+                let high_price: Vec<f64> =
                     izip!(price.high.iter(), open_price.iter(), close_price.clone())
                         .map(|(a, b, c)| a.max(*b).max(c))
                         .collect();
-                let low_price: Vec<f32> =
+                let low_price: Vec<f64> =
                     izip!(price.low.iter(), open_price.iter(), close_price.clone())
                         .map(|(a, b, c)| a.min(*b).min(c))
                         .collect();
@@ -113,7 +113,7 @@ impl Convert {
                 let (finished_vec, mask_len) = price.volume.rolling(*window).fold(
                     (Vec::with_capacity(price.volume.len()), 0usize),
                     |mut accu, x| {
-                        let m = x.last().unwrap() >= &x.quantile(*percent as f32 / 100f32);
+                        let m = x.last().unwrap() >= &x.quantile(*percent as f64 / 100f64);
                         if m {
                             accu.1 += 1;
                         }
@@ -192,11 +192,11 @@ impl Convert {
 }
 
 pub trait VertBack {
-    fn vert_back(&self, di: &DataInfo, res: Vec<&[f32]>) -> Option<vv32>;
+    fn vert_back(&self, di: &DataInfo, res: Vec<&[f64]>) -> Option<vv64>;
 }
 
 impl VertBack for Convert {
-    fn vert_back(&self, di: &DataInfo, res: Vec<&[f32]>) -> Option<vv32> {
+    fn vert_back(&self, di: &DataInfo, res: Vec<&[f64]>) -> Option<vv64> {
         match self {
             PreNow(pre, now) => {
                 let price_now = di.calc(self);
@@ -205,7 +205,7 @@ impl VertBack for Convert {
                     Some(finished_vec) => res
                         .iter()
                         .map(|x| {
-                            let mut res_pre = vec![f32::NAN; finished_vec.len()];
+                            let mut res_pre = vec![f64::NAN; finished_vec.len()];
                             let mut v_iter = x.iter();
                             finished_vec.iter().enumerate().for_each(|(i, x)| {
                                 if x.into() {
@@ -228,7 +228,7 @@ impl VertBack for Convert {
                     Some(finished_vec) => res
                         .iter()
                         .map(|x| {
-                            let mut res_pre = vec![f32::NAN; finished_vec.len()];
+                            let mut res_pre = vec![f64::NAN; finished_vec.len()];
                             let mut v_iter = x.iter();
                             finished_vec.iter().enumerate().for_each(|(i, x)| {
                                 if x.into() {
@@ -246,7 +246,7 @@ impl VertBack for Convert {
 }
 
 // impl VertBack for (Convert, Convert) {
-//     fn vert_back(&self, di: &Di, res: Vec<&[f32]>) -> Option<vv32> {
+//     fn vert_back(&self, di: &Di, res: Vec<&[f64]>) -> Option<vv64> {
 //         match self {
 //             (Convert::PreNow(pre, _), Tf(_, _)) => {
 //                 let data_pre = self.0.vert_back(di, res)?;

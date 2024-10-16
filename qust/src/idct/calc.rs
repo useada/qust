@@ -68,8 +68,8 @@ impl Calc<PriceArc> for Convert {
     }
 }
 
-impl Calc<avv32> for Pms {
-    fn calc(&self, di: &DataInfo) -> avv32 {
+impl Calc<avv64> for Pms {
+    fn calc(&self, di: &DataInfo) -> avv64 {
         if di
             .data_save
             .save_pms2d
@@ -101,8 +101,8 @@ impl Calc<avv32> for Pms {
     }
 }
 
-impl<T: GetPmsFromTa> Calc<avv32> for T {
-    fn calc(&self, di: &DataInfo) -> avv32 {
+impl<T: GetPmsFromTa> Calc<avv64> for T {
+    fn calc(&self, di: &DataInfo) -> avv64 {
         self.get_pms_from_ta(di).calc(di)
     }
 }
@@ -206,7 +206,7 @@ type Hmt<T> = hm<Box<dyn Calc<T>>, T>;
 #[derive(Default)]
 pub struct DataSave {
     pub save_dcon: RwLock<Hmt<PriceArc>>,
-    pub save_pms2d: RwLock<Hmt<avv32>>,
+    pub save_pms2d: RwLock<Hmt<avv64>>,
     pub save_livesig: RwLock<Hmt<ABoxAny>>,
     pub save_others: RwLock<Hmt<ABoxAny>>,
     pub save_any: RwLock<hm<String, ABoxAny>>,

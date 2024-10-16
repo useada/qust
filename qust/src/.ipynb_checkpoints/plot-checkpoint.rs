@@ -13,7 +13,7 @@ pub trait Plt {
     fn plot(&self);
 }
 
-impl<T: Clone + Serialize + 'static> Plt for (Vec<T>, Vec<f32>) {
+impl<T: Clone + Serialize + 'static> Plt for (Vec<T>, Vec<f64>) {
     fn plot(&self) {
         let trace = Scatter::new(self.0.clone(), self.1.to_vec()).name("cumsum").mode(Mode::Lines);
         let mut plot = Plot::new();
@@ -25,7 +25,7 @@ impl<T: Clone + Serialize + 'static> Plt for (Vec<T>, Vec<f32>) {
     }
 }
 
-impl Plt for Vec<f32> {
+impl Plt for Vec<f64> {
     fn plot(&self) {
         ((0..self.len()).collect(), self.to_vec()).plot()
     }

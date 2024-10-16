@@ -53,7 +53,7 @@ impl CondType6 for Iocond {
 
 
 #[ta_derive2]
-pub struct Posi1(pub f32);
+pub struct Posi1(pub f64);
 
 
 #[typetag::serde]

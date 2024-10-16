@@ -347,10 +347,10 @@ impl ToProgressBar for (usize, usize) {
     }
 }
 
-impl ToProgressBar for  (usize, f32) {
+impl ToProgressBar for  (usize, f64) {
     type Output<'a> = usize;
     fn to_progressbar(&self) -> ProgressBar<Self::Output<'_>> {
-        (self.0, (self.0 as f32 * self.1) as usize).to_progressbar()
+        (self.0, (self.0 as f64 * self.1) as usize).to_progressbar()
     }
 }
 /* #endregion */

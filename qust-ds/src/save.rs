@@ -182,7 +182,7 @@ pub trait Sof: Sized {
         serde_json::from_str(self.as_ref()).unwrap()
     }
 
-    fn test_save(&self, n: usize) -> (f32, f32)
+    fn test_save(&self, n: usize) -> (f64, f64)
     where
         Self: Serialize + DeserializeOwned,
     {
@@ -191,9 +191,9 @@ pub trait Sof: Sized {
             self.sof("__sof__", ".");
             let _data = rof::<Self>("__sof__", ".");
         }
-        let time_pass = timer.elapsed().as_millis() as f32 / n as f32;
+        let time_pass = timer.elapsed().as_millis() as f64 / n as f64;
         let p = PathBuf::from("__sof__");
-        let data_size = p.metadata().unwrap().len() as f32 / (1024. * 1024.);
+        let data_size = p.metadata().unwrap().len() as f64 / (1024. * 1024.);
         p.remove();
         (time_pass, data_size)
     }

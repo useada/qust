@@ -59,7 +59,7 @@ impl Algo for TargetSimple {
 #[ta_derive]
 #[derive(Default)]
 pub struct TargetPriceDum {
-    original_price: f32,
+    original_price: f64,
     exit_counts: usize,
     last_action: OrderAction,
     n_thre: usize,

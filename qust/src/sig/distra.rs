@@ -131,7 +131,7 @@ impl Stra {
         }
     }
 
-    pub fn mul_money(&self, rhs: f32) -> Self {
+    pub fn mul_money(&self, rhs: f64) -> Self {
         Stra {
             ptm: self.ptm.change_money_box(self.ptm.get_money_fn() * rhs),
             ..self.clone()
@@ -168,7 +168,7 @@ impl Stral {
             .to_stral_bare()
     }
 
-    pub fn mul_money(&self, rhs: f32) -> Self {
+    pub fn mul_money(&self, rhs: f64) -> Self {
         self.0
             .iter()
             .map(|x| x.mul_money(rhs))

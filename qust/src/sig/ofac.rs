@@ -245,9 +245,9 @@ impl Sig<PnlRes<dt>> for Pnl {
     fn di(&self, di: &mut Di) -> PnlRes<dt> {
         let sigr = self.0.di(di);
         let profit = di.profit();
-        let hold: Vec<f32> = sigr.0.iter().map(|x| x.to_num()).collect();
+        let hold: Vec<f64> = sigr.0.iter().map(|x| x.to_num()).collect();
         let mut hold_lag = hold.lag(1);
-        hold_lag[0] = 0f32;
+        hold_lag[0] = 0f64;
         let res = izip!(profit.iter(), hold_lag.iter())
             .map(|(a, b)| a * b)
             .collect();
@@ -273,7 +273,7 @@ impl<T: CondLoop + Clone> Sig<PtmRes> for Ksig<T> {
     fn di(&self, di: &mut Di) -> PtmRes {
         let mut res = self.init(di);
         let mut loop_fn = self.0.cond(di);
-        let mut posi_last = 0f32;
+        let mut posi_last = 0f64;
         let mut posi_target;
         for i in 0..res.0.len() {
             posi_target = loop_fn(i);

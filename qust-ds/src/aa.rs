@@ -182,16 +182,16 @@ pub trait Unique<'a, T: 'a>: AsRef<[T]> {
             if x.lt(accu) { x.clone() } else { accu.clone() }
         }, self.as_ref()[0].clone())
     }
-    fn ema(&self, i: usize) -> v32
+    fn ema(&self, i: usize) -> v64
     where
-        T: Copy + Into<f32>,
+        T: Copy + Into<f64>,
     {
         let data = self.as_ref();
-        let mut res = vec![f32::NAN; data.len()];
-        let mul = 2f32 / i as f32;
-        res[0] = <T as Into<f32>>::into(data[0]);
+        let mut res = vec![f64::NAN; data.len()];
+        let mul = 2f64 / i as f64;
+        res[0] = <T as Into<f64>>::into(data[0]);
         for i in 1..data.len() {
-            res[i] = mul * <T as Into<f32>>::into(data[i]) + (1.0 - mul) * res[i - 1];
+            res[i] = mul * <T as Into<f64>>::into(data[i]) + (1.0 - mul) * res[i - 1];
         }
         res
     }
@@ -206,14 +206,14 @@ pub trait Unique<'a, T: 'a>: AsRef<[T]> {
         data_vec.sort();
         data_vec
     }
-    fn quantile(&self, n: f32) -> T
+    fn quantile(&self, n: f64) -> T
     where
         T: Clone,
         for<'g> &'g T: PartialOrd,
     {
         let mut b = self.as_ref().to_vec();
         b.sort_by(|a, b| a.partial_cmp(&b).unwrap());
-        b[(self.as_ref().len() as f32 * n) as usize].clone()
+        b[(self.as_ref().len() as f64 * n) as usize].clone()
     }
     ///sort self by the indices
     fn sort_perm(self, indices: &[usize]) -> Vec<T>
@@ -432,11 +432,11 @@ impl<T: PartialEq + Clone> Grp<Vec<T>> {
         res
     }
 
-    pub fn sum(&self, data: &[f32]) -> (Vec<T>, v32) {
-        self.apply(data, <[f32] as AggFunc>::sum)
+    pub fn sum(&self, data: &[f64]) -> (Vec<T>, v64) {
+        self.apply(data, <[f64] as AggFunc>::sum)
     }
-    pub fn max(&self, data: &[f32]) -> (Vec<T>, v32) {
-        self.apply(data, <[f32] as AggFunc>::max)
+    pub fn max(&self, data: &[f64]) -> (Vec<T>, v64) {
+        self.apply(data, <[f64] as AggFunc>::max)
     }
 }
 
@@ -565,8 +565,8 @@ pub trait FillnaMut<T: Copy> {
     fn ffill(&mut self);
 }
 
-impl FillnaMut<f32> for v32 {
-    fn fillna(&mut self, data: f32) {
+impl FillnaMut<f64> for v64 {
+    fn fillna(&mut self, data: f64) {
         for data_ in self.iter_mut() {
             if data_.is_nan() {
                 *data_ = data
@@ -605,7 +605,7 @@ where
     }
 }
 
-impl<'a, T> LagFor for (&'a [T], f32)
+impl<'a, T> LagFor for (&'a [T], f64)
 where
     T: Clone,
 {
@@ -751,11 +751,11 @@ use std::ops::{Add, Div, Mul, Sub};
 
 pub struct S<'a, T>(pub &'a T);
 
-/* #region v32 + f32 */
-macro_rules! V32_f32 {
+/* #region v64 + f64 */
+macro_rules! V64_f64 {
     ($ops1: ident, $ops2: ident, $x: ty, $y: ty) => {
         impl $ops1<$x> for S<'_, $y> {
-            type Output = v32;
+            type Output = v64;
             fn $ops2(self, rhs: $x) -> Self::Output {
                 self.0.iter().map(|x| x.$ops2(rhs)).collect()
             }
@@ -764,11 +764,11 @@ macro_rules! V32_f32 {
 }
 /* #endregion */
 
-/* #region v32 + v32 */
-macro_rules! V32_V32 {
+/* #region v64 + v64 */
+macro_rules! V64_V64 {
     ($ops1: ident, $ops2: ident, $x: ty, $y: ty) => {
         impl $ops1<$x> for S<'_, $y> {
-            type Output = v32;
+            type Output = v64;
             fn $ops2(self, rhs: $x) -> Self::Output {
                 self.0
                     .iter()
@@ -781,11 +781,11 @@ macro_rules! V32_V32 {
 }
 /* #endregion */
 
-/* #region vv32 + f32 */
-macro_rules! VV32_f32 {
+/* #region vv64 + f64 */
+macro_rules! VV64_f64 {
     ($ops1: ident, $ops2: ident, $x: ty, $y: ty) => {
         impl $ops1<$x> for S<'_, $y> {
-            type Output = Vec<v32>;
+            type Output = Vec<v64>;
             fn $ops2(self, rhs: $x) -> Self::Output {
                 self.0.iter().map(|x| S(x).$ops2(rhs)).collect()
             }
@@ -794,11 +794,11 @@ macro_rules! VV32_f32 {
 }
 /* #endregion */
 
-/* #region vv32 + vv32 */
-macro_rules! VV32_VV32 {
+/* #region vv64 + vv64 */
+macro_rules! VV64_VV64 {
     ($ops1: ident, $ops2: ident, $x: ty, $y: ty) => {
         impl $ops1<$x> for S<'_, $y> {
-            type Output = Vec<v32>;
+            type Output = Vec<v64>;
             fn $ops2(self, rhs: $x) -> Self::Output {
                 self.0
                     .iter()
@@ -814,32 +814,32 @@ macro_rules! VV32_VV32 {
 /* #region Ops */
 macro_rules! vec_ops {
     ($ops1: ident, $ops2: ident) => {
-        V32_f32!($ops1, $ops2, f32, v32);
-        V32_f32!($ops1, $ops2, f32, &v32);
-        V32_f32!($ops1, $ops2, f32, &[f32]);
+        V64_f64!($ops1, $ops2, f64, v64);
+        V64_f64!($ops1, $ops2, f64, &v64);
+        V64_f64!($ops1, $ops2, f64, &[f64]);
 
-        V32_V32!($ops1, $ops2, &'_ v32, v32);
-        V32_V32!($ops1, $ops2, &'_ [f32], v32);
-        V32_V32!($ops1, $ops2, &'_ v32, &[f32]);
-        V32_V32!($ops1, $ops2, &'_ [f32], &[f32]);
-        V32_V32!($ops1, $ops2, &'_ v32, &'_ v32);
-        V32_V32!($ops1, $ops2, &'_ [f32], &'_ v32);
+        V64_V64!($ops1, $ops2, &'_ v64, v64);
+        V64_V64!($ops1, $ops2, &'_ [f64], v64);
+        V64_V64!($ops1, $ops2, &'_ v64, &[f64]);
+        V64_V64!($ops1, $ops2, &'_ [f64], &[f64]);
+        V64_V64!($ops1, $ops2, &'_ v64, &'_ v64);
+        V64_V64!($ops1, $ops2, &'_ [f64], &'_ v64);
 
-        VV32_f32!($ops1, $ops2, f32, Vec<v32>);
-        VV32_f32!($ops1, $ops2, f32, Vec<&'_ v32>);
-        VV32_f32!($ops1, $ops2, f32, Vec<&'_ [f32]>);
+        VV64_f64!($ops1, $ops2, f64, Vec<v64>);
+        VV64_f64!($ops1, $ops2, f64, Vec<&'_ v64>);
+        VV64_f64!($ops1, $ops2, f64, Vec<&'_ [f64]>);
 
-        VV32_f32!($ops1, $ops2, &'_ v32, Vec<v32>);
-        VV32_f32!($ops1, $ops2, &'_ v32, Vec<&'_ v32>);
-        VV32_f32!($ops1, $ops2, &'_ v32, Vec<&'_ [f32]>);
+        VV64_f64!($ops1, $ops2, &'_ v64, Vec<v64>);
+        VV64_f64!($ops1, $ops2, &'_ v64, Vec<&'_ v64>);
+        VV64_f64!($ops1, $ops2, &'_ v64, Vec<&'_ [f64]>);
 
-        VV32_f32!($ops1, $ops2, &'_ [f32], Vec<v32>);
-        VV32_f32!($ops1, $ops2, &'_ [f32], Vec<&'_ v32>);
-        VV32_f32!($ops1, $ops2, &'_ [f32], Vec<&'_ [f32]>);
+        VV64_f64!($ops1, $ops2, &'_ [f64], Vec<v64>);
+        VV64_f64!($ops1, $ops2, &'_ [f64], Vec<&'_ v64>);
+        VV64_f64!($ops1, $ops2, &'_ [f64], Vec<&'_ [f64]>);
 
-        VV32_VV32!($ops1, $ops2, &'_ Vec<v32>, Vec<v32>);
-        VV32_VV32!($ops1, $ops2, &'_ Vec<v32>, Vec<&'_ v32>);
-        VV32_VV32!($ops1, $ops2, &'_ Vec<v32>, Vec<&'_ [f32]>);
+        VV64_VV64!($ops1, $ops2, &'_ Vec<v64>, Vec<v64>);
+        VV64_VV64!($ops1, $ops2, &'_ Vec<v64>, Vec<&'_ v64>);
+        VV64_VV64!($ops1, $ops2, &'_ Vec<v64>, Vec<&'_ [f64]>);
     };
 }
 
@@ -970,8 +970,8 @@ pub trait InnerProduct2 {
     fn inner_product2(self) -> Option<Self::Output>;
 }
 
-impl InnerProduct2 for vv32 {
-    type Output = vv32;
+impl InnerProduct2 for vv64 {
+    type Output = vv64;
     fn inner_product2(self) -> Option<Self::Output> {
         let mut g = self.into_iter().rev().collect_vec();
         let g_start = g.pop()?;

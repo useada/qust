@@ -91,7 +91,7 @@ impl<T, N> LiveSig for OeiFilter<T, Iocond<N>>
 where
     T: LiveSig<R = (usize, usize, Vec<TradeIndex>)> + Clone + Debug,
     Iocond<N>: Cond,
-    N: Calc<vv32> + Clone + 'static,
+    N: Calc<vv64> + Clone + 'static,
 {
     type R = Vec<TradeIndex>;
     fn init(&self, di: &mut Di) {
@@ -121,11 +121,11 @@ where
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CondWeight<T, N>(pub T, pub N);
 
-impl<T> LiveSig for CondWeight<T, f32>
+impl<T> LiveSig for CondWeight<T, f64>
 where
     T: Cond + Clone,
 {
-    type R = v32;
+    type R = v64;
     fn init(&self, di: &mut Di) {
         self.0.calc_init(di);
     }
@@ -142,7 +142,7 @@ where
             if f(i, i) {
                 data.push(self.1);
             } else {
-                data.push(0f32);
+                data.push(0f64);
             }
         }
     }
@@ -150,10 +150,10 @@ where
 
 impl<T, N> LiveSig for CondWeight<T, N>
 where
-    T: LiveSig<R = v32> + Calc<BoxAny> + Clone,
-    N: LiveSig<R = v32> + Calc<BoxAny> + Clone,
+    T: LiveSig<R = v64> + Calc<BoxAny> + Clone,
+    N: LiveSig<R = v64> + Calc<BoxAny> + Clone,
 {
-    type R = v32;
+    type R = v64;
     fn init(&self, di: &mut Di) {
         di.calc_init(&self.0);
         di.calc_init(&self.1);
@@ -173,14 +173,14 @@ where
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TradeIndexWeight(pub TradeIndex, pub f32);
+pub struct TradeIndexWeight(pub TradeIndex, pub f64);
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OeiWeight<T, N>(pub T, pub N);
 
 impl<T, N> LiveSig for OeiWeight<T, N>
 where
     T: LiveSig<R = OeiRes> + Calc<BoxAny> + Clone,
-    N: LiveSig<R = v32> + Calc<BoxAny> + Clone,
+    N: LiveSig<R = v64> + Calc<BoxAny> + Clone,
 {
     type R = (usize, usize, Vec<TradeIndexWeight>);
     fn init(&self, di: &mut Di) {

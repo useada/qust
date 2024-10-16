@@ -160,20 +160,20 @@ impl Exit {
 /* #region NormHold */
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormHold {
-    Lo(f32),
-    Sh(f32),
+    Lo(f64),
+    Sh(f64),
     No,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormOpen {
-    Lo(f32),
-    Sh(f32),
+    Lo(f64),
+    Sh(f64),
     No,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormExit {
-    Lo(f32),
-    Sh(f32),
+    Lo(f64),
+    Sh(f64),
     No,
 }
 
@@ -187,7 +187,7 @@ impl NormHold {
             (NormHold::No, NormHold::Sh(i)) => NormHold::Sh(*i),
             (NormHold::Lo(i), NormHold::Sh(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormHold::Lo(res)
                 } else {
                     NormHold::Sh(res)
@@ -209,7 +209,7 @@ impl NormOpen {
             (NormOpen::Sh(i), NormOpen::Sh(j)) => NormOpen::Sh(i + j),
             (NormOpen::Lo(i), NormOpen::Sh(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormOpen::Lo(res)
                 } else {
                     NormOpen::Sh(res)
@@ -217,7 +217,7 @@ impl NormOpen {
             }
             (NormOpen::Sh(i), NormOpen::Lo(j)) => {
                 let res = j - i;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormOpen::Lo(res)
                 } else {
                     NormOpen::Sh(res)
@@ -239,7 +239,7 @@ impl NormExit {
             (NormExit::Sh(i), NormExit::Sh(j)) => NormExit::Sh(i + j),
             (NormExit::Lo(i), NormExit::Sh(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormExit::Lo(res)
                 } else {
                     NormExit::Sh(res)
@@ -247,7 +247,7 @@ impl NormExit {
             }
             (NormExit::Sh(i), NormExit::Lo(j)) => {
                 let res = j - i;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormExit::Lo(res)
                 } else {
                     NormExit::Sh(res)
@@ -281,23 +281,23 @@ impl ToNorm<NormOpen> for Open {
 impl ToNorm<NormExit> for Exit {
     fn to_norm(&self) -> NormExit {
         match self {
-            Exit::Lo(i) => NormExit::Lo(i.len() as f32),
-            Exit::Sh(i) => NormExit::Sh(i.len() as f32),
+            Exit::Lo(i) => NormExit::Lo(i.len() as f64),
+            Exit::Sh(i) => NormExit::Sh(i.len() as f64),
             Exit::No => NormExit::No,
         }
     }
 }
 
 pub trait ToNum {
-    fn to_num(&self) -> f32;
+    fn to_num(&self) -> f64;
 }
 
 impl ToNum for NormHold {
-    fn to_num(&self) -> f32 {
+    fn to_num(&self) -> f64 {
         match *self {
             NormHold::Lo(i) => i,
             NormHold::Sh(i) => -i,
-            NormHold::No => 0f32,
+            NormHold::No => 0f64,
         }
     }
 }
@@ -506,9 +506,9 @@ impl Sig<PnlRes<dt>> for Pnl{
     fn di(&self, di: &mut Di) -> PnlRes<dt> {
         let sigr = self.0.di(di);
         let profit = di.profit();
-        let hold: Vec<f32> = sigr.0.iter().map(|x| x.to_num()).collect();
+        let hold: Vec<f64> = sigr.0.iter().map(|x| x.to_num()).collect();
         let mut hold_lag = lag(&hold, 1);
-        hold_lag[0] = 0f32;
+        hold_lag[0] = 0f64;
         let res = izip!(profit.iter(), hold_lag.iter())
             .map(|(a, b)| a * b)
             .collect();

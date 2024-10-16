@@ -200,16 +200,16 @@ impl LiveSig for Stp {
                     let hold_exit = hold.add_exit(&e_vec[i]);
                     let hold = hold_exit.0;
                     let exit = hold_exit.1;
-                    res.0.push(PosiWeight(hold, 1f32));
-                    res.1.push(PosiWeight(open, 1f32));
-                    res.2.push(PosiWeight(exit, 1f32));
+                    res.0.push(PosiWeight(hold, 1f64));
+                    res.1.push(PosiWeight(open, 1f64));
+                    res.2.push(PosiWeight(exit, 1f64));
                 }
             }
             Stp::StpWeight(stp, cond_weight) => {
                 let b0 = di.calc(&**stp);
                 let b1 = di.calc(cond_weight);
                 let tsig_res = b0.downcast_ref::<RwLock<StpRes>>().unwrap().read().unwrap();
-                let weight = b1.downcast_ref::<RwLock<v32>>().unwrap().read().unwrap();
+                let weight = b1.downcast_ref::<RwLock<v64>>().unwrap().read().unwrap();
                 for i in res.0.len()..tsig_res.1.len() {
                     let w = weight[i];
                     res.0.push(PosiWeight(tsig_res.0[i].0.clone(), w));
@@ -225,10 +225,10 @@ impl LiveSig for Stp {
 
 /* #region  CondWeight */
 #[ta_derive]
-pub struct CondWeight(pub Vec<(Box<dyn Cond>, f32)>);
+pub struct CondWeight(pub Vec<(Box<dyn Cond>, f64)>);
 
 impl LiveSig for CondWeight {
-    type R = v32;
+    type R = v64;
 
     fn get_data(&self, di: &DataInfo) -> RwLock<Self::R> {
         let init_len = di.len() + 500;
@@ -242,7 +242,7 @@ impl LiveSig for CondWeight {
             let w_now = f_vec
                 .iter_mut()
                 .map(|(x, y)| if x(i, i) { **y } else { 0.0 })
-                .sum::<f32>();
+                .sum::<f64>();
             data.push(w_now);
         }
     }

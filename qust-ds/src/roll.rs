@@ -20,7 +20,7 @@ pub trait AggFunc {
     fn std(&self) -> Self::T
     where
         Self::T:
-            Sub<Self::T, Output = Self::T> + num_traits::Pow<Self::T, Output = Self::T> + From<f32>;
+            Sub<Self::T, Output = Self::T> + num_traits::Pow<Self::T, Output = Self::T> + From<f64>;
 }
 
 impl<E> AggFunc for [E]
@@ -64,9 +64,9 @@ where
     fn std(&self) -> Self::T
     where
         Self::T:
-            Sub<Self::T, Output = Self::T> + num_traits::Pow<Self::T, Output = Self::T> + From<f32>,
+            Sub<Self::T, Output = Self::T> + num_traits::Pow<Self::T, Output = Self::T> + From<f64>,
     {
-        E::pow(self.var(), E::from(0.5f32))
+        E::pow(self.var(), E::from(0.5f64))
     }
 }
 
@@ -74,8 +74,8 @@ pub trait RollApply<T, N> {
     fn roll_func(&self, f: fn(x: &[T]) -> T, n: usize) -> Vec<N>;
 }
 
-impl RollApply<f32, f32> for [f32] {
-    fn roll_func(&self, f: fn(x: &[f32]) -> f32, n: usize) -> Vec<f32> {
+impl RollApply<f64, f64> for [f64] {
+    fn roll_func(&self, f: fn(x: &[f64]) -> f64, n: usize) -> Vec<f64> {
         let mut res = Vec::with_capacity(self.len());
         for i in 0..self.len() {
             let start_i = if i < n - 1 { 0 } else { i + 1 - n };
@@ -96,7 +96,7 @@ where
     }
 }
 
-fn _max(data: &[f32]) -> f32 {
+fn _max(data: &[f64]) -> f64 {
     *data
         .iter()
         .max_by(|a, b| a.partial_cmp(b).unwrap())
@@ -136,16 +136,16 @@ pub trait Roll<T, N> {
     where
         Self: RollApply<T, N>,
         [T]: AggFunc<T = T>,
-        T: Sub<T, Output = T> + num_traits::Pow<T, Output = T> + From<f32>,
+        T: Sub<T, Output = T> + num_traits::Pow<T, Output = T> + From<f64>,
     {
         self.roll_func(<[T] as AggFunc>::std, n)
     }
 }
 
-impl Roll<f32, f32> for [f32] {}
-impl Roll<f32, v32> for vv32 {}
-impl Roll<f32, v32> for Vec<&[f32]> {}
-impl Roll<f32, v32> for Vec<&v32> {}
+impl Roll<f64, f64> for [f64] {}
+impl Roll<f64, v64> for vv64 {}
+impl Roll<f64, v64> for Vec<&[f64]> {}
+impl Roll<f64, v64> for Vec<&v64> {}
 /* #endregion */
 
 /* #region RollFunc */
@@ -167,12 +167,12 @@ pub trait AggFunc2 {
     fn agg(&self, t: RollFunc) -> Self::T;
 }
 
-impl AggFunc2 for [f32] {
-    type T = f32;
+impl AggFunc2 for [f64] {
+    type T = f64;
     fn agg(&self, t: RollFunc) -> Self::T {
         match t {
             Sum => self.iter().sum(),
-            Mean => self.agg(Sum) / (self.len() as f32),
+            Mean => self.agg(Sum) / (self.len() as f64),
             Min => *self
                 .iter()
                 .min_by(|a, b| a.partial_cmp(b).unwrap())
@@ -183,23 +183,23 @@ impl AggFunc2 for [f32] {
                 .unwrap(),
             Var => {
                 let m = self.agg(Mean);
-                let var_sum = self.iter().map(|x| f32::pow(*x - m, 2f32)).sum::<f32>();
-                var_sum / (self.len() as f32 - 1.)
+                let var_sum = self.iter().map(|x| f64::pow(*x - m, 2f64)).sum::<f64>();
+                var_sum / (self.len() as f64 - 1.)
             }
-            Std => f32::pow(self.agg(Var), 0.5),
+            Std => f64::pow(self.agg(Var), 0.5),
             Momentum => {
                 if self.is_empty() {
-                    f32::NAN
+                    f64::NAN
                 } else {
                     self[self.len() - 1] / self[0] - 1.
                 }
             }
             Skewness => {
                 if self.len() < 2 {
-                    f32::NAN
+                    f64::NAN
                 } else {
-                    let mut cm2 = 0f32;
-                    let mut cm3 = 0f32;
+                    let mut cm2 = 0f64;
+                    let mut cm3 = 0f64;
                     let m = self.agg(Mean);
                     for i in self {
                         let z = i - m;
@@ -207,9 +207,9 @@ impl AggFunc2 for [f32] {
                         cm2 += z2;
                         cm3 += z2 * z;
                     }
-                    cm3 /= self.len() as f32;
-                    cm2 /= self.len() as f32;
-                    cm3 / f32::pow(cm2, 1.5f32)
+                    cm3 /= self.len() as f64;
+                    cm2 /= self.len() as f64;
+                    cm3 / f64::pow(cm2, 1.5f64)
                 }
             }
         }
@@ -235,10 +235,10 @@ impl From<usize> for RollOps {
 }
 
 impl RollOps {
-    pub fn roll(&self, f: RollFunc, data: &[f32]) -> v32 {
+    pub fn roll(&self, f: RollFunc, data: &[f64]) -> v64 {
         match self {
             RollOps::N(n) => {
-                let mut res = vec![f32::NAN; data.len()];
+                let mut res = vec![f64::NAN; data.len()];
                 for i in 0..data.len() {
                     let start_i = if i < *n { 0 } else { i + 1 - n };
                     let data_part = &data[start_i..i + 1];
@@ -250,7 +250,7 @@ impl RollOps {
                 let mut res = RollOps::N(*n).roll(f, data);
                 res.iter_mut()
                     .take(n - 1)
-                    .for_each(|x| *x = f32::NAN);
+                    .for_each(|x| *x = f64::NAN);
                 res
             }
             RollOps::Vary(v) => {
@@ -265,17 +265,17 @@ pub trait RollCalc<T> {
     fn roll<N: AsRef<RollOps> + Clone>(&self, f: RollFunc, n: N) -> Vec<T>;
 }
 
-impl RollCalc<f32> for [f32] {
-    fn roll<N: AsRef<RollOps> + Clone>(&self, f: RollFunc, n: N) -> Vec<f32> {
+impl RollCalc<f64> for [f64] {
+    fn roll<N: AsRef<RollOps> + Clone>(&self, f: RollFunc, n: N) -> Vec<f64> {
         n.as_ref().roll(f, self)
     }
 }
 
-impl<T> RollCalc<v32> for Vec<&T>
+impl<T> RollCalc<v64> for Vec<&T>
 where
-    T: AsRef<[f32]> + RollCalc<f32> + ?Sized,
+    T: AsRef<[f64]> + RollCalc<f64> + ?Sized,
 {
-    fn roll<N: AsRef<RollOps> + Clone>(&self, f: RollFunc, n: N) -> vv32
+    fn roll<N: AsRef<RollOps> + Clone>(&self, f: RollFunc, n: N) -> vv64
     {
         self.deref()
             .iter()
@@ -290,7 +290,7 @@ where
 pub struct RollStep(pub usize, pub usize);
 
 impl RollStep {
-    pub fn roll(&self, data: &[f32], f: impl Fn(&[f32], usize) -> v32) -> v32 {
+    pub fn roll(&self, data: &[f64], f: impl Fn(&[f64], usize) -> v64) -> v64 {
         let mut res = Vec::with_capacity(data.len());
         let slice_vec = self.get_slice(data.len());
         for (start_loc, end_loc, start_i) in slice_vec {

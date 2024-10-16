@@ -82,19 +82,19 @@ pub fn dataframe_to_tick_datas(df: &DataFrame) -> Result<Vec<TickData>> {
         |opt_name| dt::parse_from_str(opt_name.unwrap_or("").to_string().trim(), date_time_format)
                 .unwrap_or_else(|_| panic!("failed to parse time, provided: {:?}, format: {}", opt_name, date_time_format))
     ).collect();
-    let last_prices: Vec<f32> = last_price_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let opens: Vec<f32> = open_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let highs: Vec<f32> = high_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let lows: Vec<f32> = low_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let closes: Vec<f32> = close_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let pre_closes: Vec<f32> = pre_close_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let open_interests: Vec<f32> = open_interest_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let volumes: Vec<f32> = volume_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let amounts: Vec<f32> = amount_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let bid_price1s: Vec<f32> = bid_price1_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let ask_price1s: Vec<f32> = ask_price1_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let bid_volume1s: Vec<f32> = bid_volume1_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
-    let ask_volume1s: Vec<f32> = ask_volume1_col.f32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let last_prices: Vec<f64> = last_price_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let opens: Vec<f64> = open_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let highs: Vec<f64> = high_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let lows: Vec<f64> = low_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let closes: Vec<f64> = close_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let pre_closes: Vec<f64> = pre_close_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let open_interests: Vec<f64> = open_interest_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let volumes: Vec<f64> = volume_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let amounts: Vec<f64> = amount_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let bid_price1s: Vec<f64> = bid_price1_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let ask_price1s: Vec<f64> = ask_price1_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let bid_volume1s: Vec<f64> = bid_volume1_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
+    let ask_volume1s: Vec<f64> = ask_volume1_col.f64()?.into_iter().map(|opt_age| opt_age.unwrap_or(0.)).collect();
     let contracts: Vec<i32> = contract_col.i32()?.into_iter().map(|opt_age| opt_age.unwrap_or(0)).collect();
 
     // 确保所有列的长度相同
@@ -107,19 +107,19 @@ pub fn dataframe_to_tick_datas(df: &DataFrame) -> Result<Vec<TickData>> {
     (0..len).map(|i| {
         Ok(TickData {
             date_time: date_times[i].clone(),
-            last_price: last_prices[i] as f32,
-            open: opens[i] as f32,
-            high: highs[i] as f32,
-            low: lows[i] as f32,
-            close: closes[i] as f32,
-            pre_close: pre_closes[i] as f32,
-            open_interest: open_interests[i] as f32,
-            volume: volumes[i] as f32,
-            amount: amounts[i] as f32,
-            bid_price1: bid_price1s[i] as f32,
-            ask_price1: ask_price1s[i] as f32,
-            bid_volume1: bid_volume1s[i] as f32,
-            ask_volume1: ask_volume1s[i] as f32,
+            last_price: last_prices[i] as f64,
+            open: opens[i] as f64,
+            high: highs[i] as f64,
+            low: lows[i] as f64,
+            close: closes[i] as f64,
+            pre_close: pre_closes[i] as f64,
+            open_interest: open_interests[i] as f64,
+            volume: volumes[i] as f64,
+            amount: amounts[i] as f64,
+            bid_price1: bid_price1s[i] as f64,
+            ask_price1: ask_price1s[i] as f64,
+            bid_volume1: bid_volume1s[i] as f64,
+            ask_volume1: ask_volume1s[i] as f64,
             contract: contracts[i] as i32,
         })
     }).collect()
@@ -146,20 +146,20 @@ pub fn load_tick_datas(file_path: &str) -> Result<Vec<TickData>> {
     let schema = Schema::from_iter(vec![
         Field::new(PlSmallStr::from("date_time"), DataType::String),
         Field::new(PlSmallStr::from("date_time_nano"), DataType::Int64),
-        Field::new(PlSmallStr::from("last_price"), DataType::Float32),
-        Field::new(PlSmallStr::from("open"), DataType::Float32),
-        Field::new(PlSmallStr::from("high"), DataType::Float32),
-        Field::new(PlSmallStr::from("low"), DataType::Float32),
+        Field::new(PlSmallStr::from("last_price"), DataType::Float64),
+        Field::new(PlSmallStr::from("open"), DataType::Float64),
+        Field::new(PlSmallStr::from("high"), DataType::Float64),
+        Field::new(PlSmallStr::from("low"), DataType::Float64),
         // Field::new(PlSmallStr::from("average"), DataType::Float32),
-        Field::new(PlSmallStr::from("close"), DataType::Float32),
-        Field::new(PlSmallStr::from("pre_close"), DataType::Float32),
-        Field::new(PlSmallStr::from("volume"), DataType::Float32),
-        Field::new(PlSmallStr::from("amount"), DataType::Float32),
-        Field::new(PlSmallStr::from("open_interest"), DataType::Float32),
-        Field::new(PlSmallStr::from("bid_price1"), DataType::Float32),
-        Field::new(PlSmallStr::from("bid_volume1"), DataType::Float32),
-        Field::new(PlSmallStr::from("ask_price1"), DataType::Float32),
-        Field::new(PlSmallStr::from("ask_volume1"), DataType::Float32),
+        Field::new(PlSmallStr::from("close"), DataType::Float64),
+        Field::new(PlSmallStr::from("pre_close"), DataType::Float64),
+        Field::new(PlSmallStr::from("volume"), DataType::Float64),
+        Field::new(PlSmallStr::from("amount"), DataType::Float64),
+        Field::new(PlSmallStr::from("open_interest"), DataType::Float64),
+        Field::new(PlSmallStr::from("bid_price1"), DataType::Float64),
+        Field::new(PlSmallStr::from("bid_volume1"), DataType::Float64),
+        Field::new(PlSmallStr::from("ask_price1"), DataType::Float64),
+        Field::new(PlSmallStr::from("ask_volume1"), DataType::Float64),
         Field::new(PlSmallStr::from("contract"), DataType::Int32),
     ]);
 

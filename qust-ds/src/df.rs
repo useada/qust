@@ -7,7 +7,7 @@ pub enum Series {
     date(Vec<da>),
     datetime(Vec<dt>),
     time(Vec<tt>),
-    f32(Vec<f32>),
+    f64(Vec<f64>),
 }
 
 pub struct Df<T> {
@@ -22,10 +22,10 @@ use std::vec::IntoIter;
 
 /* #region  */
 
-pub struct MyVec1(Vec<f32>);
+pub struct MyVec1(Vec<f64>);
 
 impl Add for MyVec1 {
-    type Output = Map<Zip<IntoIter<f32>, IntoIter<f32>>, fn((f32, f32)) -> f32>;
+    type Output = Map<Zip<IntoIter<f64>, IntoIter<f64>>, fn((f64, f64)) -> f64>;
     fn add(self, rhs: MyVec1) -> Self::Output {
         self.0.into_iter().zip(rhs.0).map(|(x, y)| x + y)
     }
@@ -38,46 +38,46 @@ impl Add for MyVec1 {
 impl Add<&Self> for Series {
     type Output = Series;
     fn add(self, rhs: &Self) -> Self::Output {
-        if let (Series::f32(mut data1), Series::f32(data2)) = (self, rhs) {
+        if let (Series::f64(mut data1), Series::f64(data2)) = (self, rhs) {
             data1.iter_mut()
                 .zip(data2.iter())
                 .for_each(|(x, y)| *x += y);
-            Series::f32(data1)
+            Series::f64(data1)
         } else {
             panic!("dddd")
         }
     }
 }
 
-impl Add<f32> for Series {
+impl Add<f64> for Series {
     type Output = Series;
-    fn add(self, rhs: f32) -> Self::Output {
-        if let Series::f32(mut data1) = self {
+    fn add(self, rhs: f64) -> Self::Output {
+        if let Series::f64(mut data1) = self {
             data1.iter_mut()
                 .for_each(|x| *x += rhs);
-            Series::f32(data1)
+            Series::f64(data1)
         } else {
             panic!("dddd")
         }
     }
 }
 
-impl FromIterator<f32> for Series {
-    fn from_iter<T: IntoIterator<Item = f32>>(iter: T) -> Self {
+impl FromIterator<f64> for Series {
+    fn from_iter<T: IntoIterator<Item = f64>>(iter: T) -> Self {
         let mut res_vec = vec![];
         for x in iter {
             res_vec.push(x);
         }
-        Series::f32(res_vec)
+        Series::f64(res_vec)
     }
 }
 
 impl Series {
-    pub fn iter(&self) -> std::slice::Iter<'_, f32> {
-        if let Series::f32(data) = self {
+    pub fn iter(&self) -> std::slice::Iter<'_, f64> {
+        if let Series::f64(data) = self {
             data.iter()
         } else {
-            panic!("expect f32")
+            panic!("expect f64")
         }
     }
 }

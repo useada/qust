@@ -24,24 +24,24 @@ impl ColorVec {
 }
 
 
-pub struct ColorSelect(f32, f32, ColorVec, f32);
+pub struct ColorSelect(f64, f64, ColorVec, f64);
 
 impl ColorSelect {
     pub fn new<T>(lower: T, up: T, color_vec: ColorVec) -> Self
     where
-        f32: From<T>,
+        f64: From<T>,
     {
-        let s = color_vec.get_vec().len() as f32;
-        let (l, u): (f32, f32) = (lower.into(), up.into());
+        let s = color_vec.get_vec().len() as f64;
+        let (l, u): (f64, f64) = (lower.into(), up.into());
         let m = (u - l) / s;
         Self(l, u, color_vec, m)
     }
 
     pub fn get<T>(&self, i: T) -> &str
     where
-        f32: From<T>,
+        f64: From<T>,
     {
-        let i: f32 = i.into();
+        let i: f64 = i.into();
         let p = (i - self.0) / self.3;
         if p < 0. {
             return self.2.get_vec().first().unwrap()

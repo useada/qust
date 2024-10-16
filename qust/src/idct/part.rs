@@ -105,7 +105,7 @@ pub enum Part {
 }
 
 impl Part {
-    pub fn calc_part(&self, di: &DataInfo, ta: Box<dyn Ta>) -> vv32 {
+    pub fn calc_part(&self, di: &DataInfo, ta: Box<dyn Ta>) -> vv64 {
         let index_part = Pre(di.last_dcon(), self.clone())
             .pip(FindDayIndex)
             .pip(CalcSaveWrapper)
@@ -136,8 +136,8 @@ impl Part {
     fn cut_part<'a>(
         &self,
         index_part: &'a vuz,
-        data: &'a avv32,
-    ) -> impl Iterator<Item = Vec<&'a [f32]>> {
+        data: &'a avv64,
+    ) -> impl Iterator<Item = Vec<&'a [f64]>> {
         index_part.windows(2).map(|x| {
             data.iter()
                 .map(|d| &d[*x.first().unwrap()..*x.last().unwrap()])

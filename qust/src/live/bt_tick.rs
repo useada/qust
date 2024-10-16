@@ -376,23 +376,23 @@ impl TickerTradeInfo {
         for order_action in self.trade_info_vec.into_iter() {
             let (open_now, exit_now, price) = match order_action.action {
                 OrderAction::LongOpen(i, price) => {
-                    let norm_open = NormOpen::Lo(i as f32);
-                    state = state.add_norm_hold(&NormHold::Long(i as f32));
+                    let norm_open = NormOpen::Lo(i as f64);
+                    state = state.add_norm_hold(&NormHold::Long(i as f64));
                     (norm_open, NormExit::No, price)
                 }
                 OrderAction::ShortOpen(i, price) => {
-                    let norm_open = NormOpen::Sh(i as f32);
-                    state = state.add_norm_hold(&NormHold::Short(i as f32));
+                    let norm_open = NormOpen::Sh(i as f64);
+                    state = state.add_norm_hold(&NormHold::Short(i as f64));
                     (norm_open, NormExit::No, price)
                 }
                 OrderAction::LongClose(i, price) => {
-                    let norm_exit = NormExit::Lo(i as f32);
-                    state = state.add_norm_hold(&NormHold::Long(i as f32));
+                    let norm_exit = NormExit::Lo(i as f64);
+                    state = state.add_norm_hold(&NormHold::Long(i as f64));
                     (NormOpen::No, norm_exit, price)
                 }
                 OrderAction::ShortClose(i, price) => {
-                    let norm_exit = NormExit::Sh(i as f32);
-                    state = state.add_norm_hold(&NormHold::Short(i as f32));
+                    let norm_exit = NormExit::Sh(i as f64);
+                    state = state.add_norm_hold(&NormHold::Short(i as f64));
                     (NormOpen::No, norm_exit, price)
                 }
                 _ => panic!("not implemetnted"),
@@ -404,17 +404,17 @@ impl TickerTradeInfo {
             norm_exit.push(exit_now);
         }
         let profit = {
-            let c_lag = c.lag(1f32);
+            let c_lag = c.lag(1f64);
             let mut res = izip!(c.iter(), c_lag.iter())
                 .map(|(x, y)| {
                     x / y - 1.
                 })
                 .collect_vec();
-            res[0] = 0f32;
+            res[0] = 0f64;
             res
         };
-        let mut pass_num = izip!(t.iter(), t.lag(1f32).iter())
-            .map(|(x, y)| ((*x - *y).num_seconds() as f32 + 0.5) / 60.)
+        let mut pass_num = izip!(t.iter(), t.lag(1f64).iter())
+            .map(|(x, y)| ((*x - *y).num_seconds() as f64 + 0.5) / 60.)
             .collect_vec();
         pass_num.remove(0);
         PnlResPreInfo {

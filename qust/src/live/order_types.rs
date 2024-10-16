@@ -30,12 +30,12 @@ pub type OrderResult<T> = Result<T, OrderError>;
 #[ta_derive]
 #[derive(Default, PartialEq)]
 pub enum OrderAction {
-    LongOpen(i32, f32),
-    LongClose(i32, f32),
-    LongCloseYd(i32, f32),
-    ShortOpen(i32, f32),
-    ShortClose(i32, f32),
-    ShortCloseYd(i32, f32),
+    LongOpen(i32, f64),
+    LongClose(i32, f64),
+    LongCloseYd(i32, f64),
+    ShortOpen(i32, f64),
+    ShortClose(i32, f64),
+    ShortCloseYd(i32, f64),
     #[default]
     Nothing,
 }
@@ -55,8 +55,8 @@ impl From<NormHold> for LiveTarget {
 pub enum LiveTarget {
     #[default]
     Nothing,
-    Long(f32),
-    Short(f32),
+    Long(f64),
+    Short(f64),
     OrderAction(OrderAction),
 }
 
@@ -92,7 +92,7 @@ impl LiveTarget {
 }
 
 impl ToNum for LiveTarget {
-    fn to_num(&self) -> f32 {
+    fn to_num(&self) -> f64 {
         use LiveTarget::*;
         match self {
             Long(i) => *i,

@@ -13,10 +13,10 @@ pub type LoopSig<'a> = Box<dyn Fn(usize, usize) -> bool + 'a>;
 /* #region cond trait */
 #[clone_trait]
 pub trait Cond {
-    fn calc_di(&self, _di: &DataInfo) -> avv32 {
+    fn calc_di(&self, _di: &DataInfo) -> avv64 {
         Default::default()
     }
-    fn calc_da<'a>(&self, _data: avv32, _di: &'a DataInfo) -> LoopSig<'a> {
+    fn calc_da<'a>(&self, _data: avv64, _di: &'a DataInfo) -> LoopSig<'a> {
         Box::new(move |_e, _o| true)
     }
     fn cond<'a>(&self, di: &'a DataInfo) -> LoopSig<'a> {
@@ -89,7 +89,7 @@ impl Cond for Msig {
 #[ta_derive]
 pub struct Iocond {
     pub pms: Pms,
-    pub range: std::ops::Range<f32>,
+    pub range: std::ops::Range<f64>,
 }
 
 #[typetag::serde]
@@ -103,7 +103,7 @@ impl Cond for Iocond {
 /* #endregion */
 
 pub trait CondLoop: Send + Sync + 'static {
-    fn cond<'a>(&self, di: &'a DataInfo) -> Box<dyn FnMut(usize) -> f32 + 'a>;
+    fn cond<'a>(&self, di: &'a DataInfo) -> Box<dyn FnMut(usize) -> f64 + 'a>;
 }
 
 /* #region FilterdayTime */
@@ -181,13 +181,13 @@ impl Cond for BandCond<Pms> {
             1 => {
                 let mid_band = data[0].clone();
                 match (&self.0, &self.1) {
-                    (Dire::Lo, BandState::Lieing) => Box::new(move |e, _o| mid_band[e] > 0f32),
-                    (Dire::Sh, BandState::Lieing) => Box::new(move |e, _o| mid_band[e] < 0f32),
+                    (Dire::Lo, BandState::Lieing) => Box::new(move |e, _o| mid_band[e] > 0f64),
+                    (Dire::Sh, BandState::Lieing) => Box::new(move |e, _o| mid_band[e] < 0f64),
                     (Dire::Lo, BandState::Action) => Box::new(move |e, _o| {
-                        e >= 1 && mid_band[e] >= 0f32 && mid_band[e - 1] < 0f32
+                        e >= 1 && mid_band[e] >= 0f64 && mid_band[e - 1] < 0f64
                     }),
                     (Dire::Sh, BandState::Action) => Box::new(move |e, _o| {
-                        e >= 1 && mid_band[e] <= 0f32 && mid_band[e - 1] > 0f32
+                        e >= 1 && mid_band[e] <= 0f64 && mid_band[e - 1] > 0f64
                     }),
                 }
             }

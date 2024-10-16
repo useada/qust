@@ -14,7 +14,7 @@ pub trait ExtractCond {
 pub struct StraCond(pub Stra, pub CondWeight, pub CondWeight);
 
 impl StraCond {
-    pub fn get_cond_m(&self, di: &mut Di) -> vv32 {
+    pub fn get_cond_m(&self, di: &mut Di) -> vv64 {
         let grp = Grp(di.pcon.price.t.iter().map(|x| x.date()).collect_vec());
         izip!(self.1.0.iter(), self.2.0.iter())
             .fold(vec![], |mut acc, (cond1, cond2)| {
@@ -25,16 +25,16 @@ impl StraCond {
                 cond_y.init(di);
                 let f_x = cond_x.cond(di);
                 let f_y = cond_y.cond(di);
-                let mut res = vec![0f32; di.len()];
+                let mut res = vec![0f64; di.len()];
                 for i in 0..di.len() {
-                    res[i] = if f_x(i, i) || f_y(i, i) { w } else { 0f32 };
+                    res[i] = if f_x(i, i) || f_y(i, i) { w } else { 0f64 };
                 };
                 acc.push(grp.apply(&res, |x| *x.last().unwrap()).1);
                 acc
             })
     }
 
-    pub fn get_stra_m(&self, di: &mut Di) -> (vda, v32, vv32) {
+    pub fn get_stra_m(&self, di: &mut Di) -> (vda, v64, vv64) {
         let pnl = di.pnl(&self.0.1, &cs1).da();
         let m_vec = pnl.1[2].clone();
         let cond_m = self.get_cond_m(di);
@@ -44,16 +44,16 @@ impl StraCond {
 
 pub struct EstMoney(pub usize);
 impl EstMoney {
-    fn est_money(&self, m: &v32, cond: &vv32) -> v32 {
+    fn est_money(&self, m: &v64, cond: &vv64) -> v64 {
         let n = self.0;
-        let mut w_v = vec![0f32; m.len()];
+        let mut w_v = vec![0f64; m.len()];
         for i in 1..m.len() + 1 {
             let start = if i <= n { 0 } else { i - n };
             let m_ori = &m[start..i];
-            let mut res_now = vec![0f32; n];
+            let mut res_now = vec![0f64; n];
             for j in 0..cond.len() {
                 let w_now = cond[j][i-1];
-                if w_now != 0f32 {
+                if w_now != 0f64 {
                     izip!(res_now.iter_mut(), cond[j][start..i].iter(), m_ori.iter())
                         .for_each(|(x, y, z)| *x += y * z * w_now);
                 }
@@ -64,7 +64,7 @@ impl EstMoney {
     }
 }
 impl CalcStra for EstMoney {
-    type Output = (vda, v32);
+    type Output = (vda, v64);
     fn calc_stra(&self, distra: &mut DiStra) -> Self::Output {
         let stra_cond = distra.1.extract_cond();
         let kk = stra_cond.get_stra_m(&mut distra.0);
@@ -153,7 +153,7 @@ impl ExtendCond for Ptm {
 }
 
 impl ExtendCond for Stp {
-    type Output = Vec<(Stp, f32)>;
+    type Output = Vec<(Stp, f64)>;
     fn extend_cond(&self) -> Self::Output {
         match self {
             Stp::Stp(_) => panic!(""),

@@ -82,10 +82,10 @@ use crate::calc::Calc;
 #[derive(Clone)]
 pub struct Iocond<T> {
     pub pms: T,
-    pub range: std::ops::Range<f32>,
+    pub range: std::ops::Range<f64>,
 }
 
-impl<T: Calc<R = vv32> + Clone + 'static + Send + Sync> Cond for Iocond<T> {
+impl<T: Calc<R = vv64> + Clone + 'static + Send + Sync> Cond for Iocond<T> {
     fn calc_init(&self, di: &mut Di) {
         di.calc_init(&self.pms);
     }

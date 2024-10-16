@@ -156,7 +156,7 @@ impl<N: Clone> IntoDf for Value<N> {
 
 impl<T> IntoDf for PnlRes<T> where [T]: ToIndex<String>, T: std::clone::Clone {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
             self.0.to_index(),
@@ -177,7 +177,7 @@ impl<T> IntoDf for PnlRes<T> where [T]: ToIndex<String>, T: std::clone::Clone {
 
 impl IntoDf for PriceOri {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
             self.date_time.to_index(),
@@ -188,33 +188,33 @@ impl IntoDf for PriceOri {
 }
 impl IntoDf for PriceTick {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
             self.date_time.to_index(),
             [&self.last_price, &self.volume, &self.amount, &self.ask_price1, &self.bid_price1,
-            &self.ask_volume1, &self.bid_volume1, &self.contract.map(|x| *x as f32)].to_value(),
+            &self.ask_volume1, &self.bid_volume1, &self.contract.map(|x| *x as f64)].to_value(),
             vec!["last_price", "last_volume", "last_amount", "ask_price1", "bid_price1", "ask_volume1", "bid_volume1", "contract"],
         ).to_df()
     }
 }
 impl IntoDf for PriceArc {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         self.to_price_ori().to_df()
     }
 }
 impl IntoDf for DataInfo {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         self.pcon.price.to_df()
     }
 }
 // impl IntoDf for Aee<PriceArc> {
 //     type Index = String;
-//     type Value = Vec<f32>;
+//     type Value = Vec<f64>;
 //     fn to_df(self) -> Df<Self::Index, Self::Value> {
 //         let open_vec = self.0.ot.map(|x| x.to_string());
 //         let mut res = self.0.to_df();
@@ -228,7 +228,7 @@ impl IntoDf for DataInfo {
 // }
 impl IntoDf for Aee<PriceOri> {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let (open_vec, pass_last, pass_this) = self
             .0
@@ -236,8 +236,8 @@ impl IntoDf for Aee<PriceOri> {
             .iter()
             .fold((vec![], vec![], vec![]), |mut accu, x| {
                 accu.0.push(x.open_time);
-                accu.1.push(x.pass_last as f32);
-                accu.2.push(x.pass_this as f32);
+                accu.1.push(x.pass_last as f64);
+                accu.2.push(x.pass_this as f64);
                 accu
             });
         let mut res = self.0.to_df();
@@ -254,14 +254,14 @@ impl IntoDf for Aee<PriceOri> {
 }
 impl IntoDf for Aee<DataInfo> {
     type Index = String;
-    type Value = Vec<f32>;
+    type Value = Vec<f64>;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         self.0.pcon.price.pip(Aee).to_df()
     }
 }
 impl IntoDf for Aee<PriceArc> {
     type Index = String;
-    type Value = v32;
+    type Value = v64;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         self.0.to_price_ori().pip(Aee).to_df()
     }
@@ -315,7 +315,7 @@ pub struct WithDi<'a, T>(pub &'a DataInfo, pub T);
 
 impl IntoDf for WithDi<'_, Pms> {
     type Index = String;
-    type Value = v32;
+    type Value = v64;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let pms_str = self.1.debug_string();
         let index = if pms_str.contains("FillCon") || pms_str.ends_with("ori"){
@@ -329,7 +329,7 @@ impl IntoDf for WithDi<'_, Pms> {
 
 impl IntoDf for WithDi<'_, PnlRes<dt>> {
     type Index = String;
-    type Value = v32;
+    type Value = v64;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         let mut df = self.1.to_df();
         let pv = self.0.pcon.ticker.info().volume_multiple;
@@ -344,7 +344,7 @@ impl IntoDf for WithDi<'_, PnlRes<dt>> {
 
 impl IntoDf for WithDi<'_, Ptm> {
     type Index = String;
-    type Value = v32;
+    type Value = v64;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         WithDi(self.0, self.0.pnl(&self.1, cs2)).to_df()
     }
@@ -352,7 +352,7 @@ impl IntoDf for WithDi<'_, Ptm> {
 
 impl IntoDf for StatsRes {
     type Index = String;
-    type Value = v32;
+    type Value = v64;
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         Df {
             index: vec![

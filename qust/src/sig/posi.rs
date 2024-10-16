@@ -173,21 +173,21 @@ impl Exit {
 /* #region NormHold */
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub enum NormHold {
-    Long(f32),
-    Short(f32),
+    Long(f64),
+    Short(f64),
     #[default]
     Nothing,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormOpen {
-    Lo(f32),
-    Sh(f32),
+    Lo(f64),
+    Sh(f64),
     No,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormExit {
-    Lo(f32),
-    Sh(f32),
+    Lo(f64),
+    Sh(f64),
     No,
 }
 
@@ -201,7 +201,7 @@ impl NormHold {
             (NormHold::Nothing, NormHold::Short(i)) => NormHold::Short(*i),
             (NormHold::Long(i), NormHold::Short(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormHold::Long(res)
                 } else {
                     NormHold::Short(-res)
@@ -209,7 +209,7 @@ impl NormHold {
             }
             (NormHold::Short(i), NormHold::Long(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormHold::Short(res)
                 } else {
                     NormHold::Long(-res)
@@ -250,9 +250,9 @@ impl NormHold {
 }
 
 use std::ops::Mul;
-impl Mul<f32> for &NormHold {
+impl Mul<f64> for &NormHold {
     type Output = NormHold;
-    fn mul(self, rhs: f32) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         match *self {
             NormHold::Long(i) => NormHold::Long(i * rhs),
             NormHold::Short(i) => NormHold::Short(i * rhs),
@@ -273,7 +273,7 @@ impl NormOpen {
             (NormOpen::Sh(i), NormOpen::Sh(j)) => NormOpen::Sh(i + j),
             (NormOpen::Lo(i), NormOpen::Sh(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormOpen::Lo(res)
                 } else {
                     NormOpen::Sh(res)
@@ -281,7 +281,7 @@ impl NormOpen {
             }
             (NormOpen::Sh(i), NormOpen::Lo(j)) => {
                 let res = j - i;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormOpen::Lo(res)
                 } else {
                     NormOpen::Sh(res)
@@ -303,7 +303,7 @@ impl NormExit {
             (NormExit::Sh(i), NormExit::Sh(j)) => NormExit::Sh(i + j),
             (NormExit::Lo(i), NormExit::Sh(j)) => {
                 let res = i - j;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormExit::Lo(res)
                 } else {
                     NormExit::Sh(res)
@@ -311,7 +311,7 @@ impl NormExit {
             }
             (NormExit::Sh(i), NormExit::Lo(j)) => {
                 let res = j - i;
-                if res > 0f32 {
+                if res > 0f64 {
                     NormExit::Lo(res)
                 } else {
                     NormExit::Sh(res)
@@ -345,19 +345,19 @@ impl ToNorm<NormOpen> for Open {
 impl ToNorm<NormExit> for Exit {
     fn to_norm(&self) -> NormExit {
         match self {
-            Exit::Lo(i) => NormExit::Lo(i.len() as f32),
-            Exit::Sh(i) => NormExit::Sh(i.len() as f32),
+            Exit::Lo(i) => NormExit::Lo(i.len() as f64),
+            Exit::Sh(i) => NormExit::Sh(i.len() as f64),
             Exit::No => NormExit::No,
         }
     }
 }
 
 pub trait ToNum {
-    fn to_num(&self) -> f32;
+    fn to_num(&self) -> f64;
 }
 
 impl ToNum for NormHold {
-    fn to_num(&self) -> f32 {
+    fn to_num(&self) -> f64 {
         match *self {
             NormHold::Long(i) => i,
             NormHold::Short(i) => -i,
@@ -367,7 +367,7 @@ impl ToNum for NormHold {
 }
 
 impl ToNum for NormOpen {
-    fn to_num(&self) -> f32 {
+    fn to_num(&self) -> f64 {
         match *self {
             NormOpen::Lo(i) => i,
             NormOpen::Sh(i) => -i,
@@ -377,7 +377,7 @@ impl ToNum for NormOpen {
 }
 
 impl ToNum for NormExit {
-    fn to_num(&self) -> f32 {
+    fn to_num(&self) -> f64 {
         match *self {
             NormExit::Lo(i) => i,
             NormExit::Sh(i) => -i,
@@ -416,7 +416,7 @@ impl Dire {
 
 /* #region PowiWeight */
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PosiWeight<T>(pub T, pub f32);
+pub struct PosiWeight<T>(pub T, pub f64);
 
 impl ToNorm<NormHold> for PosiWeight<Hold> {
     fn to_norm(&self) -> NormHold {
@@ -448,8 +448,8 @@ impl ToNorm<NormExit> for PosiWeight<Exit> {
             return NormExit::No;
         }
         match &self.0 {
-            Exit::Lo(i) => NormExit::Lo(i.len() as f32 * self.1),
-            Exit::Sh(i) => NormExit::Sh(i.len() as f32 * self.1),
+            Exit::Lo(i) => NormExit::Lo(i.len() as f64 * self.1),
+            Exit::Sh(i) => NormExit::Sh(i.len() as f64 * self.1),
             Exit::No => NormExit::No,
         }
     }
@@ -464,31 +464,31 @@ pub type PosiFunc<'a> = Box<dyn Fn(&NormHold, usize) -> NormHold + 'a>;
 #[typetag::serde(tag = "Money")]
 pub trait Money: DynClone + Send + Sync + std::fmt::Debug + 'static {
     fn register<'a>(&'a self, di: &'a DataInfo) -> PosiFunc<'a>;
-    fn get_init_weight(&self) -> f32 {
+    fn get_init_weight(&self) -> f64 {
         1.
     }
-    fn change_weight(&self, weight: f32) -> Box<dyn Money>;
+    fn change_weight(&self, weight: f64) -> Box<dyn Money>;
 }
 clone_trait_object!(Money);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct M1(pub f32);
+pub struct M1(pub f64);
 
 #[typetag::serde]
 impl Money for M1 {
     fn register<'a>(&'a self, _di: &'a DataInfo) -> PosiFunc<'a> {
         Box::new(move |x, _y| x * self.0)
     }
-    fn get_init_weight(&self) -> f32 {
+    fn get_init_weight(&self) -> f64 {
         self.0
     }
-    fn change_weight(&self, weight: f32) -> Box<dyn Money> {
+    fn change_weight(&self, weight: f64) -> Box<dyn Money> {
         Box::new(M1(self.0 * weight))
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct M2(pub f32);
+pub struct M2(pub f64);
 
 #[typetag::serde]
 impl Money for M2 {
@@ -498,13 +498,13 @@ impl Money for M2 {
         let multi = self.0 / pv;
         Box::new(move |x, y| x * (multi / c[y]))
     }
-    fn change_weight(&self, weight: f32) -> Box<dyn Money> {
+    fn change_weight(&self, weight: f64) -> Box<dyn Money> {
         Box::new(M2(self.0 * weight))
     }
 }
 
 #[ta_derive]
-pub struct M3(pub f32);
+pub struct M3(pub f64);
 
 #[typetag::serde]
 impl Money for M3 {
@@ -522,14 +522,14 @@ impl Money for M3 {
             }
         })
     }
-    fn change_weight(&self, weight: f32) -> Box<dyn Money> {
+    fn change_weight(&self, weight: f64) -> Box<dyn Money> {
         Box::new(M3(self.0 * weight))
     }
 }
 
-impl Mul<f32> for Box<dyn Money> {
+impl Mul<f64> for Box<dyn Money> {
     type Output = Box<dyn Money>;
-    fn mul(self, rhs: f32) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         self.change_weight(rhs)
     }
 }

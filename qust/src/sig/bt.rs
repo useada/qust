@@ -6,14 +6,14 @@ pub struct SigOri {
     pub t: dt,
     pub ticker: Ticker,
     pub target: NormHold,
-    pub price: f32,
+    pub price: f64,
 }
 
 pub trait IntoStatusVec {
     fn into_status_vec(self) -> Vec<SigOri>;
 }
 
-impl IntoStatusVec for (Ticker, Arc<Vec<dt>>, Vec<NormHold>, av32) {
+impl IntoStatusVec for (Ticker, Arc<Vec<dt>>, Vec<NormHold>, av64) {
     fn into_status_vec(self) -> Vec<SigOri> {
         izip!(self.1.iter(), self.2, self.3.iter()).fold(vec![], |mut accu, (t, target, price)| {
             let res = SigOri {
@@ -28,7 +28,7 @@ impl IntoStatusVec for (Ticker, Arc<Vec<dt>>, Vec<NormHold>, av32) {
     }
 }
 
-impl IntoStatusVec for Vec<(Ticker, Arc<Vec<dt>>, Vec<NormHold>, av32)> {
+impl IntoStatusVec for Vec<(Ticker, Arc<Vec<dt>>, Vec<NormHold>, av64)> {
     fn into_status_vec(self) -> Vec<SigOri> {
         let mut res: Vec<_> = self.into_iter().flat_map(|x| x.into_status_vec()).collect();
         res.sort_by(|a, b| a.t.cmp(&b.t));
@@ -103,11 +103,11 @@ impl IntoStatusVec for DiStral<'_> {
 pub struct Status {
     pub target: NormHold,
     pub hold: NormHold,
-    pub price: f32,
+    pub price: f64,
 }
 
 impl Status {
-    fn net_num(&self) -> f32 {
+    fn net_num(&self) -> f64 {
         self.target.to_num().abs() - self.hold.to_num().abs()
     }
 }
@@ -128,7 +128,7 @@ impl Default for Order {
 }
 
 impl Order {
-    fn get_trade_fee(&self, price: f32, info: &TickerInfo) -> (f32, f32, f32) {
+    fn get_trade_fee(&self, price: f64, info: &TickerInfo) -> (f64, f64, f64) {
         let open_num = self.open.to_num().abs();
         let exit_num = self.exit.to_num().abs();
         let comm = info.comm(price, open_num) + info.comm(price, exit_num);
@@ -142,25 +142,25 @@ impl Order {
 pub struct Transaction {
     pub t: dt,
     pub ticker: Ticker,
-    pub pnl: f32,
-    pub profit: f32,
-    pub comm: f32,
-    pub slip: f32,
-    pub price: f32,
-    pub money_hold: f32,
-    pub money_trade: f32,
+    pub pnl: f64,
+    pub profit: f64,
+    pub comm: f64,
+    pub slip: f64,
+    pub price: f64,
+    pub money_hold: f64,
+    pub money_trade: f64,
     pub order: Order,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct MoneyCut {
-    pub upper: f32,
+    pub upper: f64,
     pub hold: hm<Ticker, Status>,
 }
 
 impl MoneyCut {
-    pub fn get_hold_money(&self) -> f32 {
-        self.hold.iter().fold(0f32, |mut accu, x| {
+    pub fn get_hold_money(&self) -> f64 {
+        self.hold.iter().fold(0f64, |mut accu, x| {
             accu += x.1.hold.to_num().abs() * x.0.info().volume_multiple * x.1.price;
             accu
         })
@@ -186,7 +186,7 @@ pub trait BackTest {
             s_vec[4].push(hold_trans.1.comm + hold_trans.1.slip);
             s_vec[5].push(hold_trans.1.comm);
             s_vec[6].push(hold_trans.1.slip);
-            s_vec[7].push(0f32);
+            s_vec[7].push(0f64);
         });
         PnlRes(t_vec, s_vec)
     }
@@ -198,7 +198,7 @@ impl BackTest for MoneyCut {
         let hold = self.hold.entry(data.ticker).or_insert(Status {
             target: NormHold::Nothing,
             hold: NormHold::Nothing,
-            price: 1f32,
+            price: 1f64,
         });
         hold.target = data.target.clone();
         let left_money = self.upper - money_in;
@@ -210,9 +210,9 @@ impl BackTest for MoneyCut {
         let profit = hold.hold.to_num() * info.volume_multiple * (data.price - hold.price);
         hold.price = data.price;
         let order: Order =
-            if (hold.hold == data.target) || (left_money <= 0f32 && net_money >= 0f32) {
+            if (hold.hold == data.target) || (left_money <= 0f64 && net_money >= 0f64) {
                 Order::default()
-            } else if left_money > 0f32 && net_money > 0f32 && left_money < net_money {
+            } else if left_money > 0f64 && net_money > 0f64 && left_money < net_money {
                 let sub_money = net_money - left_money;
                 let sub_num = sub_money / hold.price / info.volume_multiple;
                 let hold_adj = match data.target {
@@ -249,11 +249,11 @@ impl BackTest for MoneyCut {
 #[derive(Debug, Clone)]
 pub struct MoneyAdj {
     pub money_cut: MoneyCut,
-    pub his_record: (Vec<da>, Vec<f32>),
+    pub his_record: (Vec<da>, Vec<f64>),
     pub back_window: usize,
-    pub rate: f32,
-    pub target_money: f32,
-    pub rate_record: v32,
+    pub rate: f64,
+    pub target_money: f64,
+    pub rate_record: v64,
     pub ori_record: MoneyCut,
 }
 
@@ -272,14 +272,14 @@ impl MoneyAdj {
         if self.his_record.0.is_empty() {
             self.his_record.0.push(t_da);
             self.his_record.1.push(m);
-            self.rate = 1f32;
+            self.rate = 1f64;
         } else if self.his_record.0.last().unwrap() != &t_da {
             self.rate = if self.his_record.1.len() <= 10 {
-                1f32
+                1f64
             } else {
                 let dom = self.his_record.1.nlast(self.back_window).quantile(0.85);
-                if dom <= 10f32 {
-                    1f32
+                if dom <= 10f64 {
+                    1f64
                 } else {
                     self.target_money / dom
                 }

@@ -10,19 +10,19 @@ pub struct PriceTick {
         deserialize_with = "deserialize_vec_dt"
     )]
     pub date_time: vdt,
-    pub last_price: v32,
-    pub open: v32,
-    pub high: v32,
-    pub low: v32,
-    pub close: v32,
-    pub pre_close: v32,
-    pub open_interest: v32,
-    pub volume: v32,
-    pub amount: v32,
-    pub bid_price1: v32,
-    pub ask_price1: v32,
-    pub bid_volume1: v32,
-    pub ask_volume1: v32,
+    pub last_price: v64,
+    pub open: v64,
+    pub high: v64,
+    pub low: v64,
+    pub close: v64,
+    pub pre_close: v64,
+    pub open_interest: v64,
+    pub volume: v64,
+    pub amount: v64,
+    pub bid_price1: v64,
+    pub ask_price1: v64,
+    pub bid_volume1: v64,
+    pub ask_volume1: v64,
     pub contract: Vec<i32>,
 }
 
@@ -155,14 +155,14 @@ pub struct PriceOri {
         deserialize_with = "deserialize_vec_dt"
     )]
     pub date_time: vdt,
-    pub open: v32,
-    pub high: v32,
-    pub low: v32,
-    pub close: v32,
-    pub volume: v32,
-    pub amount: v32,
+    pub open: v64,
+    pub high: v64,
+    pub low: v64,
+    pub close: v64,
+    pub volume: v64,
+    pub amount: v64,
     pub ki: Vec<KlineInfo>,
-    pub immut_info: Vec<vv32>,
+    pub immut_info: Vec<vv64>,
 }
 
 impl PriceOri {
@@ -217,14 +217,14 @@ impl PriceOri {
 #[derive(Clone)]
 pub struct PriceArc {
     pub date_time: avdt,
-    pub open: av32,
-    pub high: av32,
-    pub low: av32,
-    pub close: av32,
-    pub volume: av32,
-    pub amount: av32,
+    pub open: av64,
+    pub high: av64,
+    pub low: av64,
+    pub close: av64,
+    pub volume: av64,
+    pub amount: av64,
     pub ki: Arc<Vec<KlineInfo>>,
-    pub immut_info: Vec<Arc<vv32>>,
+    pub immut_info: Vec<Arc<vv64>>,
     pub finished: Option<Vec<KlineState>>,
 }
 
@@ -353,7 +353,7 @@ impl DataInfo {
         part_vec[part_vec.len() - 1].clone()
     }
 
-    pub fn get_kline(&self, p: &KlineType) -> av32 {
+    pub fn get_kline(&self, p: &KlineType) -> av64 {
         match p {
             KlineType::Open => self.open(),
             KlineType::High => self.high(),
@@ -371,25 +371,25 @@ impl DataInfo {
     pub fn date_time(&self) -> avdt {
         self.calc(self.last_dcon()).date_time
     }
-    pub fn open(&self) -> av32 {
+    pub fn open(&self) -> av64 {
         self.calc(self.last_dcon()).open
     }
-    pub fn high(&self) -> av32 {
+    pub fn high(&self) -> av64 {
         self.calc(self.last_dcon()).high
     }
-    pub fn low(&self) -> av32 {
+    pub fn low(&self) -> av64 {
         self.calc(self.last_dcon()).low
     }
-    pub fn close(&self) -> av32 {
+    pub fn close(&self) -> av64 {
         self.calc(self.last_dcon()).close
     }
-    pub fn volume(&self) -> av32 {
+    pub fn volume(&self) -> av64 {
         self.calc(self.last_dcon()).volume
     }
-    pub fn amount(&self) -> av32 {
+    pub fn amount(&self) -> av64 {
         self.calc(self.last_dcon()).amount
     }
-    pub fn immut_info(&self) -> Vec<Arc<vv32>> {
+    pub fn immut_info(&self) -> Vec<Arc<vv64>> {
         self.calc(self.last_dcon()).immut_info
     }
 
@@ -414,7 +414,7 @@ impl DataInfo {
         x.as_ref().calc(self)
     }
 
-    pub fn tz_profit(&self) -> f32 {
+    pub fn tz_profit(&self) -> f64 {
         let tz = self.pcon.ticker.info().price_tick;
         10000. * tz / self.pcon.price.close.last().unwrap()
     }
@@ -429,7 +429,7 @@ impl Debug for DataInfo {
             self.pcon.price.ki.first().unwrap().open_time.to_string(),
             self.pcon.price.date_time.last().unwrap().to_string(),
             self.pcon.price.date_time.len().to_string(),
-            (self.pcon.price.ki.map(|x| x.pass_this as f32).mean() / 120.) as usize,
+            (self.pcon.price.ki.map(|x| x.pass_this as f64).mean() / 120.) as usize,
         )
     }
 }
