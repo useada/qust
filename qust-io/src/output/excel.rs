@@ -192,7 +192,7 @@ impl IntoDf for PriceTick {
     fn to_df(self) -> Df<Self::Index, Self::Value> {
         (
             self.date_time.to_index(),
-            [&self.last_price, &self.last_volume, &self.last_amount, &self.ask_price1, &self.bid_price1,
+            [&self.last_price, &self.volume, &self.amount, &self.ask_price1, &self.bid_price1,
             &self.ask_volume1, &self.bid_volume1, &self.contract.map(|x| *x as f32)].to_value(),
             vec!["last_price", "last_volume", "last_amount", "ask_price1", "bid_price1", "ask_volume1", "bid_volume1", "contract"],
         ).to_df()

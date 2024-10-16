@@ -21,3 +21,5 @@ csv = { version = ">= 0.0.0" }
 ndarray = { version = "0.16.1" }
 ndarray-stats = { version = "0.6.0" }
 reqwest = { version = "0.12.8", features = ["json"] }
+polars = "0.43.1"
+anyhow = "1.0.89"

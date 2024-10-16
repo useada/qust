@@ -3,6 +3,7 @@
 pub mod input {
     pub mod ticks;
     pub mod read_csv;
+    pub mod data_feed;
 }
 
 pub mod output {

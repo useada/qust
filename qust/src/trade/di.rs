@@ -11,13 +11,19 @@ pub struct PriceTick {
     )]
     pub date_time: vdt,
     pub last_price: v32,
-    pub last_volume: v32,
-    pub last_amount: v32,
-    pub contract: Vec<i32>,
+    pub open: v32,
+    pub high: v32,
+    pub low: v32,
+    pub close: v32,
+    pub pre_close: v32,
+    pub open_interest: v32,
+    pub volume: v32,
+    pub amount: v32,
     pub bid_price1: v32,
     pub ask_price1: v32,
     pub bid_volume1: v32,
     pub ask_volume1: v32,
+    pub contract: Vec<i32>,
 }
 
 impl PriceTick {
@@ -25,38 +31,56 @@ impl PriceTick {
         Self {
             date_time: Vec::with_capacity(i),
             last_price: Vec::with_capacity(i),
-            last_volume: Vec::with_capacity(i),
-            last_amount: Vec::with_capacity(i),
-            contract: Vec::with_capacity(i),
+            open: Vec::with_capacity(i),
+            high: Vec::with_capacity(i),
+            low: Vec::with_capacity(i),
+            close: Vec::with_capacity(i),
+            pre_close: Vec::with_capacity(i),
+            open_interest: Vec::with_capacity(i),
+            volume: Vec::with_capacity(i),
+            amount: Vec::with_capacity(i),
             bid_price1: Vec::with_capacity(i),
             ask_price1: Vec::with_capacity(i),
             bid_volume1: Vec::with_capacity(i),
             ask_volume1: Vec::with_capacity(i),
+            contract: Vec::with_capacity(i),
         }
     }
 
     pub fn shrink_to_fit(&mut self) {
         self.date_time.shrink_to_fit();
         self.last_price.shrink_to_fit();
-        self.last_volume.shrink_to_fit();
-        self.last_amount.shrink_to_fit();
-        self.contract.shrink_to_fit();
+        self.open.shrink_to_fit();
+        self.high.shrink_to_fit();
+        self.low.shrink_to_fit();
+        self.close.shrink_to_fit();
+        self.pre_close.shrink_to_fit();
+        self.open_interest.shrink_to_fit();
+        self.volume.shrink_to_fit();
+        self.amount.shrink_to_fit();
         self.bid_price1.shrink_to_fit();
         self.ask_price1.shrink_to_fit();
         self.bid_volume1.shrink_to_fit();
         self.ask_volume1.shrink_to_fit();
+        self.contract.shrink_to_fit();
     }
 
     pub fn cat(&mut self, price: &mut PriceTick) {
         self.date_time.append(&mut price.date_time);
         self.last_price.append(&mut price.last_price);
-        self.last_volume.append(&mut price.last_volume);
-        self.last_amount.append(&mut price.last_amount);
-        self.contract.append(&mut price.contract);
+        self.open.append(&mut price.last_price);
+        self.high.append(&mut price.last_price);
+        self.low.append(&mut price.last_price);
+        self.close.append(&mut price.last_price);
+        self.pre_close.append(&mut price.last_price);
+        self.open_interest.append(&mut price.last_price);
+        self.volume.append(&mut price.volume);
+        self.amount.append(&mut price.amount);
         self.bid_price1.append(&mut price.bid_price1);
         self.ask_price1.append(&mut price.ask_price1);
         self.bid_volume1.append(&mut price.bid_volume1);
         self.ask_volume1.append(&mut price.ask_volume1);
+        self.contract.append(&mut price.contract);
     }
 
     pub fn to_price_ori(&self, r: TriBox, ticker: Ticker) -> PriceOri {
@@ -65,11 +89,20 @@ impl PriceTick {
         }
         let mut price_ori = r.gen_price_ori(self);
         let mut f = r.update_tick_func(ticker);
-        for (&date_time, &last_price, &last_volume, &last_amount, &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract) in izip!(
+
+        for (&date_time, &last_price, &open, &high, &low, &close,
+            &pre_close, &open_interest, &volume, &amount,
+            &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract) in izip!(
             self.date_time.iter(),
             self.last_price.iter(),
-            self.last_volume.iter(),
-            self.last_amount.iter(),
+            self.open.iter(),
+            self.high.iter(),
+            self.low.iter(),
+            self.close.iter(),
+            self.pre_close.iter(),
+            self.open_interest.iter(),
+            self.volume.iter(),
+            self.amount.iter(),
             self.bid_price1.iter(),
             self.ask_price1.iter(),
             self.bid_volume1.iter(),
@@ -79,8 +112,14 @@ impl PriceTick {
             let tick_data = TickData {
                 date_time,
                 last_price,
-                last_volume,
-                last_amount,
+                open,
+                high,
+                low,
+                close,
+                pre_close,
+                open_interest,
+                volume,
+                amount,
                 bid_price1,
                 ask_price1,
                 bid_volume1,

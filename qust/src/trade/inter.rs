@@ -22,8 +22,14 @@ pub struct KlineData {
 pub struct TickData {
     pub date_time: dt,
     pub last_price: f32,
-    pub last_volume: f32,
-    pub last_amount: f32,
+    pub open: f32,
+    pub high: f32,
+    pub low: f32,
+    pub close: f32,
+    pub pre_close: f32,
+    pub open_interest: f32,
+    pub volume: f32,
+    pub amount: f32,
     pub bid_price1: f32,
     pub ask_price1: f32,
     pub bid_volume1: f32,
@@ -62,8 +68,8 @@ impl UpdateData<TickData> for KlineData {
         self.high = data.last_price;
         self.low = data.last_price;
         self.close = data.last_price;
-        self.volume = data.last_volume;
-        self.amount = data.last_amount;
+        self.volume = data.volume;
+        self.amount = data.amount;
         self.ki.open_time = data.date_time;
         self.ki.pass_this = 1;
         self.ki.contract = data.contract;
@@ -74,8 +80,8 @@ impl UpdateData<TickData> for KlineData {
         self.high = self.high.max(data.last_price);
         self.low = self.low.min(data.last_price);
         self.close = data.last_price;
-        self.volume += data.last_volume;
-        self.amount += data.last_amount;
+        self.volume += data.volume;
+        self.amount += data.amount;
         self.ki.pass_this += 1;
     }
 
@@ -192,8 +198,14 @@ impl PriceTick {
     pub fn update(&mut self, data: &TickData) {
         self.date_time.push(data.date_time);
         self.last_price.push(data.last_price);
-        self.last_volume.push(data.last_volume);
-        self.last_amount.push(data.last_amount);
+        self.open.push(data.open);
+        self.high.push(data.high);
+        self.low.push(data.low);
+        self.close.push(data.close);
+        self.pre_close.push(data.pre_close);
+        self.open_interest.push(data.open_interest);
+        self.volume.push(data.volume);
+        self.amount.push(data.amount);
         self.bid_price1.push(data.bid_price1);
         self.ask_price1.push(data.ask_price1);
         self.bid_volume1.push(data.bid_volume1);
@@ -205,8 +217,14 @@ impl PriceTick {
         izip!(
             self.date_time.iter(),
             self.last_price.iter(),
-            self.last_volume.iter(),
-            self.last_amount.iter(),
+            self.open.iter(),
+            self.high.iter(),
+            self.low.iter(),
+            self.close.iter(),
+            self.pre_close.iter(),
+            self.open_interest.iter(),
+            self.volume.iter(),
+            self.amount.iter(),
             self.bid_price1.iter(),
             self.ask_price1.iter(),
             self.bid_volume1.iter(),
@@ -214,11 +232,19 @@ impl PriceTick {
             self.contract.iter(),
         )
         .map(
-            |(&date_time, &last_price, &last_volume, &last_amount, &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract)| TickData {
+            |(&date_time, &last_price, &open, &high, &low, &close, &pre_close,
+                 &open_interest, &volume, &amount,
+                 &bid_price1, &ask_price1, &bid_volume1, &ask_volume1, &contract)| TickData {
                 date_time,
                 last_price,
-                last_volume,
-                last_amount,
+                open,
+                high,
+                low,
+                close,
+                pre_close,
+                open_interest,
+                volume,
+                amount,
                 bid_price1,
                 ask_price1,
                 bid_volume1,
