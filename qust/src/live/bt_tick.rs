@@ -108,19 +108,22 @@ where
         let mut match_fn = self.match_box.bt_match();
         let mut hold = HoldLocal::default();
         let mut last_order_action = OrderAction::default();
+
         Box::new(move |tick_data| {
             let stream_bt_match = StreamBtMatch {
                 tick_data,
                 hold: &mut hold,
                 order_action: &last_order_action.clone(),
             };
-            let res = match_fn(stream_bt_match);
+
+            let results = match_fn(stream_bt_match);
             let stream_api = StreamApiType {
                 tick_data,
                 hold: &hold,
             };
+
             last_order_action = ops_fn(stream_api);
-            res
+            results
         })
     }
 }
@@ -132,14 +135,15 @@ where
     type Input<'a> = &'a [TickData];
     type Output = Vec<TradeInfo>;
     fn bt_tick(&self, input: Self::Input<'_>) -> Self::Output {
-        let mut res = vec![];
+        let mut results = vec![];
         let mut ops_fn = self.cond_type8();
+
         for tick_data in input.iter() {
             if let Some(trade_info) = ops_fn(tick_data) {
-                res.push(trade_info);
+                results.push(trade_info);
             }
         }
-        res
+        results
     }
 }
 

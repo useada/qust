@@ -11,40 +11,41 @@ impl BtMatch for MatchSimple {
     fn bt_match(&self) -> RetFnBtMatch {
         Box::new(move |stream_bt_match| {
         use OrderAction::*;
-        let mut res = None;
+        let mut results = None;
         let tick_data = stream_bt_match.tick_data;
         let hold = stream_bt_match.hold;
+
         match stream_bt_match.order_action.clone() {
             LongOpen(i, price) => {
                 if tick_data.last_price <= price {
-                    res = Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, price) });
+                    results = Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, price) });
                     hold.td_long += i;
                 }
             }
             LongClose(i, price) => {
                 if tick_data.last_price <= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: LoClose(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, price) });
+                    results = Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, price) });
                     hold.td_short -= i;
                 }
             }
             ShortOpen(i, price) => {
                 if tick_data.last_price >= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: ShOpen(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, price) });
+                    results = Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, price) });
                     hold.td_short += i;
                 }
             }
             ShortClose(i, price) => {
                 if tick_data.last_price >= price {
                     // res = Some(TradeInfo { time: tick_data.t, action: ShClose(i, tick_data.c) });
-                    res = Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, price) });
+                    results = Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, price) });
                     hold.td_long -= i;
                 }
             }
             _ => { }
         }
-        res
+            results
         })
     }
 }

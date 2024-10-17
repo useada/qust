@@ -510,7 +510,7 @@ impl Ctp {
             }.api_convert();
 
             let req_order_res = self.req_order(&mut order);
-            loge!(ticker, "ctp: insert order, err={req_order_res}, {:?}", order);
+            loge!(level: Info, ticker, "ctp: insert order, err={req_order_res}, {:?}", order);
         }
         Some(())
     }

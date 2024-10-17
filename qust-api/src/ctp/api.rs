@@ -202,7 +202,7 @@ impl CtpQueryRes {
         };
 
         let data_receive = data.api_convert();
-        loge!(ticker, "ctp: {:?}", data_receive);
+        loge!(level: Debug, ticker, "ctp: {:?}", data_receive);
         if let Some(data_receive_on) = self.contract_data_receive_map.get(&instrument_id) {
             data_receive_on.push(data_receive);
             data_receive_on.notify_all();
