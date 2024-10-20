@@ -1,4 +1,8 @@
 #![allow(unused)]
+
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use ctrlc::{set_handler};
 use qust_derive::*;
 use qust_ds::prelude::*;
 use qust::prelude::*;
@@ -100,10 +104,22 @@ async fn backtest_tick(instrument_id: &str) {
 async fn main() {
     // backtest_kline().await;
     // backtest_tick().await;
+    // 创建一个原子布尔值来存储信号的状态
+    let signal_received = Arc::new(AtomicBool::new(false));
+
+    // 克隆一个原子布尔值的句柄，以便在信号处理函数中使用
+    // let signal_received_clone = Arc::clone(&signal_received);
+
+    // 设置信号处理函数
+    set_handler(move || {
+        loge!("stra", "received exit signal, exiting...");
+        Arc::clone(&signal_received).store(true, Ordering::SeqCst);
+    }).expect("failed to process exit signal");
+
     let live_stra_pool = TwoMaTickOrderAction.to_live_stra_pool(vec![aler, eber]);
     let ticker_contract_map = ["al2401", "eb2401"].config_parse();
     let stra_api = StraApi::new( live_stra_pool, ticker_contract_map);
     let account = SimnowAccount("171808", "Tangjihede00").config_parse();//account , password
-    let running_api = running_api_ctp(stra_api, account);
+    let running_api = running_api_ctp(stra_api, account, Arc::clone(&signal_received));
     run_ctp(running_api).await;
 }

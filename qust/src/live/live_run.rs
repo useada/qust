@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use super::prelude::{StraApi, TradeApi};
 use anyhow::Result;
 use qust_ds::prelude::logging_service;
@@ -29,6 +30,7 @@ impl ServiceApi for StraApi {
 }
 
 pub struct RunningApi<T, N> {
+    pub signal_received: Arc<AtomicBool>,
     pub stra_api: T,
     pub service_api: N,
     pub log_path: Option<String>,

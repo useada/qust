@@ -14,6 +14,7 @@ use super::type_bridge::*;
 use std::ffi::CStr;
 use std::path::PathBuf;
 use std::{ sync::{ Arc, Mutex }, ffi::CString };
+use std::sync::atomic::{AtomicBool, Ordering};
 use anyhow::Result;
 
 #[derive(Debug)]
@@ -615,6 +616,12 @@ pub async fn run_ctp<T: ServiceApi>(running_api: RunningApi<T, CtpApi>) {
     let mut time_manager = TimeManager::default();
     let sleep_n = 100;
     for _ in 0..10000 {
+
+        if running_api.signal_received.load(Ordering::SeqCst) {
+            loge!("ctp", "run_ctp exited with signal");
+            break;
+        }
+
         match time_manager.get_state() {
             RunningAction::StartToRun(target_state) => {
                 loge!("ctp", "Start running");
@@ -647,10 +654,11 @@ pub async fn run_ctp<T: ServiceApi>(running_api: RunningApi<T, CtpApi>) {
     }
 }
 
-pub fn running_api_ctp(stra_api: StraApi, account: CtpAccountConfig) -> RunningApi<StraApi, CtpApi> {
+pub fn running_api_ctp(stra_api: StraApi, account: CtpAccountConfig, signal_received: Arc<AtomicBool>) -> RunningApi<StraApi, CtpApi> {
     let trade_api_vec = stra_api.get_trade_api_vec1();
     let ctp_api = CtpApi::new(account, trade_api_vec.clone());
     RunningApi {
+        signal_received,
         stra_api,
         service_api: ctp_api,
         log_path: Some("./logs".into()),

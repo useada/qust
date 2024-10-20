@@ -31,6 +31,7 @@ impl TimeManager {
     pub fn get_state(&self) -> RunningAction {
         let time_now = Local::now().time();
         let is_in_trading_time = self.time_intervals.iter().any(|x| x.compare_same(&time_now));
+
         match (self.last_running_state, is_in_trading_time) {
             (InRunningInTradingTime, true) => Sleep(300, "running and trading".into()),
             (InRunningInTradingTime, false) => StopToRun(NotRunningNotTradingTime),
