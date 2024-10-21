@@ -2,6 +2,7 @@ use qust_derive::*;
 use serde::{ Serialize, Deserialize };
 use super::cond_ops::*;
 use super::order_types::*;
+use crate::{ loge, std_prelude::*, trade::prelude::* };
 
 #[ta_derive2]
 pub struct MatchSimple;
@@ -184,6 +185,43 @@ impl BtMatch for MatchMean {
             };
             c = tick_data.last_price;
             res
+        })
+    }
+}
+
+
+#[ta_derive2]
+pub struct MatchWithoutCheck;
+
+#[typetag::serde]
+impl BtMatch for crate::prelude::MatchWithoutCheck {
+    fn bt_match(&self) -> RetFnBtMatch {
+        Box::new(move |stream_bt_match| {
+            use OrderAction::*;
+            let mut results = None;
+            let tick_data = stream_bt_match.tick_data;
+            let hold = stream_bt_match.hold;
+
+            match stream_bt_match.order_action.clone() {
+                LongOpen(i, price) => {
+                    results = Some(TradeInfo { time: tick_data.date_time, action: LongOpen(i, price) });
+                    hold.td_long += i;
+                }
+                LongClose(i, price) => {
+                    results = Some(TradeInfo { time: tick_data.date_time, action: LongClose(i, price) });
+                    hold.td_short -= i;
+                }
+                ShortOpen(i, price) => {
+                    results = Some(TradeInfo { time: tick_data.date_time, action: ShortOpen(i, price) });
+                    hold.td_short += i;
+                }
+                ShortClose(i, price) => {
+                    results = Some(TradeInfo { time: tick_data.date_time, action: ShortClose(i, price) });
+                    hold.td_long -= i;
+                }
+                _ => { }
+            }
+            results
         })
     }
 }
