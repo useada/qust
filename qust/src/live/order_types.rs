@@ -245,8 +245,8 @@ impl OrderPool {
     }
 
     pub fn update_order(&mut self, order: OrderReceive) -> OrderResult<bool> {
-        loge!(self.ticker, "order pool: {:?}", order);
-        loge!(self.ticker, "order pool: {:?}", self.pool.iter().map(|x| x.0.to_string()).collect_vec());
+        loge!(self.ticker, "order pool: id={}, status={:?}, update_time={}", order.id, order.order_status, order.update_time);
+        // loge!(self.ticker, "order pool: {:?}", self.pool.iter().map(|x| x.0.to_string()).collect_vec());
         let order_local = self
             .pool
             .get_mut(&order.id)
@@ -329,17 +329,18 @@ impl OrderPool {
                 Ok(None)
             }
             CancelResult::HaveDiffOrder(order_ref) => {
-                let order_res = self.cancel_order(&order_ref)?;
-                loge!(self.ticker, "order pool: cancel the old order {:?}", order_res);
-                Ok(order_res)
+                let order_result = self.cancel_order(&order_ref)?;
+                loge!(self.ticker, "order pool: cancel {:?}", order_result);
+                Ok(order_result)
             }
             CancelResult::NotHave => {
-                let order_res = self.create_order(order_action);
-                loge!(self.ticker, "order pool: create a new order {:?}", order_res);
-                Ok(Some(order_res))
+                let order_result = self.create_order(order_action);
+                loge!(self.ticker, "order pool: create id={}, order_action={:?}, order_status={:?}, is_to_cancel={}, create_time={}, update_time={}",
+                    order_result.id, order_result.order_action, order_result.order_status, order_result.is_to_cancel, order_result.create_time, order_result.update_time);
+                Ok(Some(order_result))
             }
             CancelResult::CancelAll => {
-                loge!(self.ticker, "order pool: cancel all orders with OrderAction::{:?}", order_action);
+                loge!(self.ticker, "order pool: cancel all with OrderAction::{:?}", order_action);
                 match self.pool.keys().take(1).next().cloned() {
                     Some(order_id) => self.cancel_order(&order_id),
                     None => Ok(None),

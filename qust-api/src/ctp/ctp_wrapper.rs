@@ -510,8 +510,9 @@ impl Ctp {
                 account: self.ca.account.as_str(),
             }.api_convert();
 
-            let req_order_res = self.req_order(&mut order);
-            loge!(level: Info, ticker, "ctp: insert order, err={req_order_res}, {:?}", order);
+            let req_order_result = self.req_order(&mut order);
+            // loge!(level: Info, ticker, "ctp: insert order, err={req_order_result}, {:?}", order);
+            loge!(level: Info, ticker, "ctp: insert order err={req_order_result}");
         }
         Some(())
     }
