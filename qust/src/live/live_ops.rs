@@ -90,21 +90,21 @@ pub struct TradeApi {
 }
 
 #[derive(Default)]
-pub struct UpdateDi {
+pub struct UpdateDataInfo {
     pub live_api: LiveStraPool,
     ticker_contract_map: hm<Ticker, &'static str>,
     ticker_order_pool_map: hm<Ticker, Arc<Mutex<OrderPool>>>,
     pub ticker_record: hm<Ticker, Mutex<Vec<TickData>>>,
 }
 
-impl UpdateDi {
+impl UpdateDataInfo {
     pub fn new(live_api: LiveStraPool, ticker_contract_map: hm<Ticker, &'static str>) -> Self {
-        let mut res = Self {
+        let mut result = Self {
             live_api,
             ..Default::default()
         };
-        res.merge_ticker_contract_map(ticker_contract_map);
-        res
+        result.merge_ticker_contract_map(ticker_contract_map);
+        result
     }
 
     pub fn get_ticker_string_vec(&self) -> Vec<String> {
@@ -228,13 +228,13 @@ impl UpdateDi {
 }
 
 pub struct StraApi {
-    pub update_di: Arc<UpdateDi>,
+    pub update_data_info: Arc<UpdateDataInfo>,
 }
 
 impl StraApi {
     pub fn new(live_api: LiveStraPool, ticker_contract_map: hm<Ticker, &'static str>) -> Self {
-        let update_di = UpdateDi::new(live_api, ticker_contract_map).pip(Arc::new);
-        StraApi { update_di }
+        let update_data_info = UpdateDataInfo::new(live_api, ticker_contract_map).pip(Arc::new);
+        StraApi { update_data_info }
     }
 
     pub fn load_from_update_di_path<T>(p: impl AsRef<Path>) -> Self
@@ -245,12 +245,12 @@ impl StraApi {
         let file_name = p_path.file_name().unwrap();
         let dir_name = p_path.parent().unwrap();
         let stra_api = T::rof(file_name.to_str().unwrap(), dir_name.as_os_str().to_str().unwrap());
-        let update_di = UpdateDi::new(stra_api.into(), Default::default());
-        Self { update_di: Arc::new(update_di) }
+        let update_data_info = UpdateDataInfo::new(stra_api.into(), Default::default());
+        Self { update_data_info: Arc::new(update_data_info) }
     }
 
     pub fn get_trade_api_vec1(&self) -> Vec<Arc<TradeApi>> {
-        self.update_di
+        self.update_data_info
             .ticker_contract_map
             .iter()
             .map(|(ticker, contract)| {
@@ -270,9 +270,9 @@ impl StraApi {
     }
 
     pub fn start_spy_on_data_receive(&self, trade_api: Arc<TradeApi>) {
-        let update_di = Arc::clone(&self.update_di);
+        let update_data_info = Arc::clone(&self.update_data_info);
         thread::spawn(move || {
-            update_di.start_spy_on_data_receive(trade_api);
+            update_data_info.start_spy_on_data_receive(trade_api);
         });
     }
 }

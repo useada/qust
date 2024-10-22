@@ -179,14 +179,14 @@ impl GetInstrumentID for OnRspOrderInsertPacket {
 }
 
 #[derive(Default)]
-pub struct CtpQueryRes {
+pub struct CtpQueryResult {
     pub trading_account: RwLock<TradingAccountField>,
     pub instrument_info: RwLock<hm<IstmId, InstrumentField>>,
     pub contract_data_receive_map: hm<IstmId, DataReceiveOn>, 
     pub contract_ticker_map: hm<IstmId, &'static str>,
 }
 
-impl CtpQueryRes {
+impl CtpQueryResult {
     pub fn send_data_receive<T>(&self, data: T)
     where
         T: GetInstrumentID + ApiConvert<DataReceive>,

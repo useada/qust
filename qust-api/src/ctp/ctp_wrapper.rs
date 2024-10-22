@@ -9,7 +9,7 @@ use ctp_futures::{ TThostFtdcClientSystemInfoType};
 use futures::{StreamExt, executor::block_on};
 use super::config::CtpAccountConfig;
 use super::utiles::*;
-use super::api::{ApiConvert, CtpOrderAction, CtpQueryRes, OrderSendWithAccount};
+use super::api::{ApiConvert, CtpOrderAction, CtpQueryResult, OrderSendWithAccount};
 use super::type_bridge::*;
 use std::ffi::CStr;
 use std::path::PathBuf;
@@ -43,14 +43,14 @@ pub struct Ctp {
     td_rid: Mutex<RequestId>,
     pub md: Mutex<MdApi>,
     td: Mutex<TraderApi>,
-    query_res: CtpQueryRes,
+    query_result: CtpQueryResult,
     td_req_interval: Mutex<Instant>,
     need_reconnect_md: Mutex<bool>,
     need_reconnect_td: Mutex<bool>,
 }
 
 impl Ctp {
-    pub fn new(flow_path: &str, config: &CtpAccountConfig, query_res: CtpQueryRes) -> Self {
+    pub fn new(flow_path: &str, config: &CtpAccountConfig, query_result: CtpQueryResult) -> Self {
         let flow_path_dir = PathBuf::from(flow_path);
         if !flow_path_dir.exists() {
             flow_path_dir.build_an_empty_dir();
@@ -59,13 +59,14 @@ impl Ctp {
         flow_path_save_data.build_an_empty_dir();
         flow_path_dir.join("sig_log").build_an_empty_dir();
         let flow_path_str = flow_path_save_data.as_os_str().to_str().unwrap();
+
         Ctp {
             ca: config.clone(),
             md_rid: Mutex::new(RequestId(0)),
             td_rid: Mutex::new(RequestId(0)),
             md: Mutex::new(md_api::create_api(flow_path_str, false, false)),
             td: Mutex::new(td_api::create_api(flow_path_str, false)),
-            query_res,
+            query_result,
             td_req_interval: Mutex::new(Instant::now()),
             need_reconnect_md: Mutex::new(false),
             need_reconnect_td: Mutex::new(false),
@@ -73,10 +74,10 @@ impl Ctp {
     }
 
     pub fn get_api_version(&self) -> Result<String> {
-        let res = ctp_futures::trader_api::get_api_version();
-        let c_str = unsafe { CStr::from_ptr(res) };
-        let res = c_str.to_str()?;
-        Ok(res.into())
+        let result = ctp_futures::trader_api::get_api_version();
+        let c_str = unsafe { CStr::from_ptr(result) };
+        let result = c_str.to_str()?;
+        Ok(result.into())
     }
 
     fn md_accu(&self) -> i32 {
@@ -110,19 +111,19 @@ impl Ctp {
     }
 
     fn update_trading_account(&self, data: TradingAccountField) {
-        *self.query_res.trading_account.write().unwrap() = data;
+        *self.query_result.trading_account.write().unwrap() = data;
     }
 
-    fn _req_update_qry_instrument(&self, instrumentid: IstmId) -> i32 {
+    fn _req_update_qry_instrument(&self, instrument_id: IstmId) -> i32 {
         let mut req = QryInstrumentField {
-            InstrumentID: instrumentid,
+            InstrumentID: instrument_id,
             ..QryInstrumentField::default()
         };
         self.td.lock().unwrap().req_qry_instrument(&mut req, self.td_accu())
     }
 
     fn update_qry_instrument(&self, data: InstrumentField) {
-        self.query_res.instrument_info.write().unwrap().insert(data.InstrumentID, data);
+        self.query_result.instrument_info.write().unwrap().insert(data.InstrumentID, data);
     }
     
 
@@ -147,11 +148,11 @@ impl Ctp {
         // res
     }
 
-    fn _req_update_positions_istmid(&self, instrumentid: IstmId) -> i32 {
+    fn _req_update_positions_istmid(&self, instrument_id: IstmId) -> i32 {
         let mut req = QryInvestorPositionField::default();
         set_cstr_from_str_truncate_i8(&mut req.BrokerID, self.ca.broker_id.as_str());
         set_cstr_from_str_truncate_i8(&mut req.InvestorID, self.ca.account.as_str());
-        req.InstrumentID = instrumentid;
+        req.InstrumentID = instrument_id;
         self.td.lock().unwrap().req_qry_investor_position(&mut req, self.td_accu())
     }
 
@@ -166,8 +167,8 @@ impl Ctp {
         set_cstr_from_str_truncate_i8(&mut req.BrokerID, self.ca.broker_id.as_str());
         set_cstr_from_str_truncate_i8(&mut req.UserID, self.ca.account.as_str());
         set_cstr_from_str_truncate_i8(&mut req.Password, self.ca.password.as_str());
-        let res = self.md.lock().unwrap().req_user_login(&mut req, self.md_accu());
-        res
+        let result = self.md.lock().unwrap().req_user_login(&mut req, self.md_accu());
+        result
     }
 
     pub fn login_td(&self) -> i32 {
@@ -238,9 +239,9 @@ impl Ctp {
     }
 
 
-    pub fn subsecribe_market_data_all(&self) -> i32 {
+    pub fn subscribe_market_data_all(&self) -> i32 {
         let contracts = self
-            .query_res
+            .query_result
             .contract_ticker_map
             .keys()
             .map(|x| {
@@ -250,16 +251,16 @@ impl Ctp {
         self.subscribe_market_data(contracts)
     }
     
-    pub fn un_subseribe_market_data_all(&self) -> i32 {
+    pub fn un_subscribe_market_data_all(&self) -> i32 {
          let contracts = self
-            .query_res
+            .query_result
             .contract_ticker_map
             .keys()
             .map(|x| {
                 x.to_str_0()
             })
             .collect::<Vec<_>>();
-        self.un_subscribe_market_data(contracts)      
+        self.un_subscribe_market_data(contracts)
     }
 
     pub async fn start_md(&self) {
@@ -268,10 +269,12 @@ impl Ctp {
             self.md.lock().unwrap().register_spi(pp);
             stream
         };
+
         self.md.lock().unwrap().register_front(CString::new(self.ca.md_front.as_str()).unwrap());
         sleep2(1);
         self.md.lock().unwrap().init();
         sleep2(1);
+
         while let Some(spi_msg) = stream.next().await {
             use ctp_futures::md_api::CThostFtdcMdSpiOutput::*;
             match spi_msg {
@@ -287,9 +290,9 @@ impl Ctp {
                             sleep2(1);
                             continue;
                         }
-                        self.subsecribe_market_data_all();
+                        self.subscribe_market_data_all();
                     } else {
-                        loge!("ctp", "md disconnect intentiolly");
+                        loge!("ctp", "md disconnect intentionally");
                         self.md.lock().unwrap().release();
                         break;
                     }
@@ -318,7 +321,7 @@ impl Ctp {
                 }
                 OnRtnDepthMarketData(ref md) => {
                     let market_data: DepthMarketDataField = md.p_depth_market_data.unwrap();
-                    self.query_res.send_data_receive(market_data);
+                    self.query_result.send_data_receive(market_data);
                 }
                 OnRspUnSubMarketData(ref p) => {
                     loge!("ctp", "unsubscribe market data: {}", p.p_rsp_info.unwrap().ErrorMsg.to_str_0());
@@ -369,7 +372,7 @@ impl Ctp {
                             continue;
                         }
                     } else {
-                        loge!("ctp", "td disconnect intentiolly");
+                        loge!("ctp", "td disconnect intentionally");
                         self.td.lock().unwrap().release();
                         break;
                     }
@@ -443,7 +446,7 @@ impl Ctp {
                     }
                 }
                 OnRspOrderInsert(ref p) => {
-                    self.query_res.send_data_receive(p.clone());
+                    self.query_result.send_data_receive(p.clone());
                     let g: RspInfoField = p.p_rsp_info.unwrap();
                     if g.ErrorID != 0 {
                         println!(
@@ -457,7 +460,7 @@ impl Ctp {
                 }
                 OnRtnOrder(ref p) => {
                     let p_order: OrderField = p.p_order.unwrap();
-                    self.query_res.send_data_receive(p_order);
+                    self.query_result.send_data_receive(p_order);
                 }
                 OnRspQryInstrument(ref p) => {
                     if p.b_is_last {
@@ -485,7 +488,7 @@ impl Ctp {
     pub fn start_spy_on_data_send(&self, trade_api: Arc<TradeApi>) -> Option<()> {
         let contract = trade_api.contract;
         let instrument_id = contract.into_istm_id();
-        let ticker = self.query_res.contract_ticker_map.get(&instrument_id)?;
+        let ticker = self.query_result.contract_ticker_map.get(&instrument_id)?;
         loge!("spy", "ctp start holder notification: {}", contract);
 
         loop {
@@ -537,7 +540,7 @@ impl CtpApi {
                 accu.1.insert(istm_id, trade_api.ticker.into());
                 accu
             });
-        let query_res = CtpQueryRes {
+        let query_res = CtpQueryResult {
             contract_data_receive_map,
             contract_ticker_map,
             ..Default::default()
@@ -587,7 +590,7 @@ impl CtpApi {
      }
 
     pub fn start_spy_on_data_receive(&self) {
-        self.ctp.subsecribe_market_data_all();
+        self.ctp.subscribe_market_data_all();
     }
 }
 
@@ -603,7 +606,7 @@ impl ServiceApi for CtpApi {
     }
 
     fn stop(&self, _trade_api: Vec<Arc<TradeApi>>) -> Result<()> {
-        self.ctp.un_subseribe_market_data_all();
+        self.ctp.un_subscribe_market_data_all();
         self.logout();
         Ok(())
     }
