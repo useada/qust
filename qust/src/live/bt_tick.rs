@@ -380,24 +380,24 @@ impl TickerTradeInfo {
         for order_action in self.trade_info_vec.into_iter() {
             let (open_now, exit_now, price) = match order_action.action {
                 OrderAction::LongOpen(i, price) => {
-                    let norm_open = NormOpen::Lo(i as f64);
+                    let norm_open = NormOpen::Long(i as f64);
                     state = state.add_norm_hold(&NormHold::Long(i as f64));
-                    (norm_open, NormExit::No, price)
+                    (norm_open, NormExit::Nothing, price)
                 }
                 OrderAction::ShortOpen(i, price) => {
-                    let norm_open = NormOpen::Sh(i as f64);
+                    let norm_open = NormOpen::Short(i as f64);
                     state = state.add_norm_hold(&NormHold::Short(i as f64));
-                    (norm_open, NormExit::No, price)
+                    (norm_open, NormExit::Nothing, price)
                 }
                 OrderAction::LongClose(i, price) => {
-                    let norm_exit = NormExit::Lo(i as f64);
+                    let norm_exit = NormExit::Long(i as f64);
                     state = state.add_norm_hold(&NormHold::Long(i as f64));
-                    (NormOpen::No, norm_exit, price)
+                    (NormOpen::Nothing, norm_exit, price)
                 }
                 OrderAction::ShortClose(i, price) => {
-                    let norm_exit = NormExit::Sh(i as f64);
+                    let norm_exit = NormExit::Short(i as f64);
                     state = state.add_norm_hold(&NormHold::Short(i as f64));
-                    (NormOpen::No, norm_exit, price)
+                    (NormOpen::Nothing, norm_exit, price)
                 }
                 _ => panic!("not implemetnted"),
             };

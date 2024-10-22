@@ -121,8 +121,8 @@ pub struct Order {
 impl Default for Order {
     fn default() -> Self {
         Order {
-            open: NormOpen::No,
-            exit: NormExit::No,
+            open: NormOpen::Nothing,
+            exit: NormExit::Nothing,
         }
     }
 }

@@ -320,7 +320,7 @@ impl LiveSig for Ptm {
                                 res.open_i = None;
                                 (hold_now, open_now, exit_now)
                             } else {
-                                (res.state.clone(), NormOpen::No, NormExit::No)
+                                (res.state.clone(), NormOpen::Nothing, NormExit::Nothing)
                             }
                         }
                         None => {
@@ -331,7 +331,7 @@ impl LiveSig for Ptm {
                                 res.open_i = i.into();
                                 (hold_now, open_now, exit_now)
                             } else {
-                                (res.state.clone(), NormOpen::No, NormExit::No)
+                                (res.state.clone(), NormOpen::Nothing, NormExit::Nothing)
                             }
                         }
                     };
@@ -377,9 +377,9 @@ impl LiveSig for Ptm {
                 // println!("ooooo {:?}  {:?}", res.ptm_res.0.len(), sigr.1.len());
                 for i in res.ptm_res.0.len()..sigr.1.len() {
                     let sig_now = match sigr.1[i] {
-                        NormOpen::Lo(i) => NormHold::Long(i),
-                        NormOpen::Sh(i) => NormHold::Short(i),
-                        NormOpen::No => NormHold::Nothing,
+                        NormOpen::Long(i) => NormHold::Long(i),
+                        NormOpen::Short(i) => NormHold::Short(i),
+                        NormOpen::Nothing => NormHold::Nothing,
                     };
                     // println!("{:?} --- {:?}", sigr.1[i], sig_now);
                     res.ptm_res.0.push(sig_now);

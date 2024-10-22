@@ -180,15 +180,15 @@ pub enum NormHold {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormOpen {
-    Lo(f64),
-    Sh(f64),
-    No,
+    Long(f64),
+    Short(f64),
+    Nothing,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum NormExit {
-    Lo(f64),
-    Sh(f64),
-    No,
+    Long(f64),
+    Short(f64),
+    Nothing,
 }
 
 impl NormHold {
@@ -222,29 +222,29 @@ impl NormHold {
 
     pub fn sub_norm_hold(&self, y: &NormHold) -> (NormOpen, NormExit) {
         match (self, y) {
-            (NormHold::Nothing, NormHold::Nothing) => (NormOpen::No, NormExit::No),
-            (NormHold::Long(i), NormHold::Nothing) => (NormOpen::Lo(*i), NormExit::No),
-            (NormHold::Short(i), NormHold::Nothing) => (NormOpen::Sh(*i), NormExit::No),
-            (NormHold::Nothing, NormHold::Long(i)) => (NormOpen::No, NormExit::Sh(*i)),
-            (NormHold::Nothing, NormHold::Short(i)) => (NormOpen::No, NormExit::Lo(*i)),
+            (NormHold::Nothing, NormHold::Nothing) => (NormOpen::Nothing, NormExit::Nothing),
+            (NormHold::Long(i), NormHold::Nothing) => (NormOpen::Long(*i), NormExit::Nothing),
+            (NormHold::Short(i), NormHold::Nothing) => (NormOpen::Short(*i), NormExit::Nothing),
+            (NormHold::Nothing, NormHold::Long(i)) => (NormOpen::Nothing, NormExit::Short(*i)),
+            (NormHold::Nothing, NormHold::Short(i)) => (NormOpen::Nothing, NormExit::Long(*i)),
             (NormHold::Long(i), NormHold::Long(j)) => {
                 let res = i - j;
                 if res > 0. {
-                    (NormOpen::Lo(res), NormExit::No)
+                    (NormOpen::Long(res), NormExit::Nothing)
                 } else {
-                    (NormOpen::No, NormExit::Sh(-res))
+                    (NormOpen::Nothing, NormExit::Short(-res))
                 }
             }
             (NormHold::Short(i), NormHold::Short(j)) => {
                 let res = i - j;
                 if res > 0. {
-                    (NormOpen::Sh(res), NormExit::No)
+                    (NormOpen::Short(res), NormExit::Nothing)
                 } else {
-                    (NormOpen::No, NormExit::Lo(-res))
+                    (NormOpen::Nothing, NormExit::Long(-res))
                 }
             }
-            (NormHold::Long(i), NormHold::Short(j)) => (NormOpen::Lo(*i), NormExit::Lo(*j)),
-            (NormHold::Short(i), NormHold::Long(j)) => (NormOpen::Sh(*i), NormExit::Lo(*j)),
+            (NormHold::Long(i), NormHold::Short(j)) => (NormOpen::Long(*i), NormExit::Long(*j)),
+            (NormHold::Short(i), NormHold::Long(j)) => (NormOpen::Short(*i), NormExit::Long(*j)),
         }
     }
 }
@@ -264,27 +264,27 @@ impl Mul<f64> for &NormHold {
 impl NormOpen {
     pub fn add_norm_open(&self, y: &NormOpen) -> NormOpen {
         match (self, y) {
-            (NormOpen::No, NormOpen::No) => NormOpen::No,
-            (NormOpen::Lo(i), NormOpen::No) => NormOpen::Lo(*i),
-            (NormOpen::Sh(i), NormOpen::No) => NormOpen::Sh(*i),
-            (NormOpen::No, NormOpen::Lo(i)) => NormOpen::Lo(*i),
-            (NormOpen::No, NormOpen::Sh(i)) => NormOpen::Sh(*i),
-            (NormOpen::Lo(i), NormOpen::Lo(j)) => NormOpen::Lo(i + j),
-            (NormOpen::Sh(i), NormOpen::Sh(j)) => NormOpen::Sh(i + j),
-            (NormOpen::Lo(i), NormOpen::Sh(j)) => {
+            (NormOpen::Nothing, NormOpen::Nothing) => NormOpen::Nothing,
+            (NormOpen::Long(i), NormOpen::Nothing) => NormOpen::Long(*i),
+            (NormOpen::Short(i), NormOpen::Nothing) => NormOpen::Short(*i),
+            (NormOpen::Nothing, NormOpen::Long(i)) => NormOpen::Long(*i),
+            (NormOpen::Nothing, NormOpen::Short(i)) => NormOpen::Short(*i),
+            (NormOpen::Long(i), NormOpen::Long(j)) => NormOpen::Long(i + j),
+            (NormOpen::Short(i), NormOpen::Short(j)) => NormOpen::Short(i + j),
+            (NormOpen::Long(i), NormOpen::Short(j)) => {
                 let res = i - j;
                 if res > 0f64 {
-                    NormOpen::Lo(res)
+                    NormOpen::Long(res)
                 } else {
-                    NormOpen::Sh(res)
+                    NormOpen::Short(res)
                 }
             }
-            (NormOpen::Sh(i), NormOpen::Lo(j)) => {
+            (NormOpen::Short(i), NormOpen::Long(j)) => {
                 let res = j - i;
                 if res > 0f64 {
-                    NormOpen::Lo(res)
+                    NormOpen::Long(res)
                 } else {
-                    NormOpen::Sh(res)
+                    NormOpen::Short(res)
                 }
             }
         }
@@ -294,27 +294,27 @@ impl NormOpen {
 impl NormExit {
     pub fn add_norm_exit(&self, y: &NormExit) -> NormExit {
         match (self, y) {
-            (NormExit::No, NormExit::No) => NormExit::No,
-            (NormExit::Lo(i), NormExit::No) => NormExit::Lo(*i),
-            (NormExit::Sh(i), NormExit::No) => NormExit::Sh(*i),
-            (NormExit::No, NormExit::Lo(i)) => NormExit::Lo(*i),
-            (NormExit::No, NormExit::Sh(i)) => NormExit::Sh(*i),
-            (NormExit::Lo(i), NormExit::Lo(j)) => NormExit::Lo(i + j),
-            (NormExit::Sh(i), NormExit::Sh(j)) => NormExit::Sh(i + j),
-            (NormExit::Lo(i), NormExit::Sh(j)) => {
+            (NormExit::Nothing, NormExit::Nothing) => NormExit::Nothing,
+            (NormExit::Long(i), NormExit::Nothing) => NormExit::Long(*i),
+            (NormExit::Short(i), NormExit::Nothing) => NormExit::Short(*i),
+            (NormExit::Nothing, NormExit::Long(i)) => NormExit::Long(*i),
+            (NormExit::Nothing, NormExit::Short(i)) => NormExit::Short(*i),
+            (NormExit::Long(i), NormExit::Long(j)) => NormExit::Long(i + j),
+            (NormExit::Short(i), NormExit::Short(j)) => NormExit::Short(i + j),
+            (NormExit::Long(i), NormExit::Short(j)) => {
                 let res = i - j;
                 if res > 0f64 {
-                    NormExit::Lo(res)
+                    NormExit::Long(res)
                 } else {
-                    NormExit::Sh(res)
+                    NormExit::Short(res)
                 }
             }
-            (NormExit::Sh(i), NormExit::Lo(j)) => {
+            (NormExit::Short(i), NormExit::Long(j)) => {
                 let res = j - i;
                 if res > 0f64 {
-                    NormExit::Lo(res)
+                    NormExit::Long(res)
                 } else {
-                    NormExit::Sh(res)
+                    NormExit::Short(res)
                 }
             }
         }
@@ -336,18 +336,18 @@ impl ToNorm<NormHold> for Hold {
 impl ToNorm<NormOpen> for Open {
     fn to_norm(&self) -> NormOpen {
         match *self {
-            Open::Lo(_i) => NormOpen::Lo(1.0),
-            Open::Sh(_i) => NormOpen::Sh(1.0),
-            Open::No => NormOpen::No,
+            Open::Lo(_i) => NormOpen::Long(1.0),
+            Open::Sh(_i) => NormOpen::Short(1.0),
+            Open::No => NormOpen::Nothing,
         }
     }
 }
 impl ToNorm<NormExit> for Exit {
     fn to_norm(&self) -> NormExit {
         match self {
-            Exit::Lo(i) => NormExit::Lo(i.len() as f64),
-            Exit::Sh(i) => NormExit::Sh(i.len() as f64),
-            Exit::No => NormExit::No,
+            Exit::Lo(i) => NormExit::Long(i.len() as f64),
+            Exit::Sh(i) => NormExit::Short(i.len() as f64),
+            Exit::No => NormExit::Nothing,
         }
     }
 }
@@ -369,9 +369,9 @@ impl ToNum for NormHold {
 impl ToNum for NormOpen {
     fn to_num(&self) -> f64 {
         match *self {
-            NormOpen::Lo(i) => i,
-            NormOpen::Sh(i) => -i,
-            NormOpen::No => 0.,
+            NormOpen::Long(i) => i,
+            NormOpen::Short(i) => -i,
+            NormOpen::Nothing => 0.,
         }
     }
 }
@@ -379,9 +379,9 @@ impl ToNum for NormOpen {
 impl ToNum for NormExit {
     fn to_num(&self) -> f64 {
         match *self {
-            NormExit::Lo(i) => i,
-            NormExit::Sh(i) => -i,
-            NormExit::No => 0.,
+            NormExit::Long(i) => i,
+            NormExit::Short(i) => -i,
+            NormExit::Nothing => 0.,
         }
     }
 }
@@ -433,24 +433,24 @@ impl ToNorm<NormHold> for PosiWeight<Hold> {
 impl ToNorm<NormOpen> for PosiWeight<Open> {
     fn to_norm(&self) -> NormOpen {
         if self.1 == 0. {
-            return NormOpen::No;
+            return NormOpen::Nothing;
         }
         match &self.0 {
-            Open::Lo(_i) => NormOpen::Lo(1.0 * self.1),
-            Open::Sh(_i) => NormOpen::Sh(1.0 * self.1),
-            Open::No => NormOpen::No,
+            Open::Lo(_i) => NormOpen::Long(1.0 * self.1),
+            Open::Sh(_i) => NormOpen::Short(1.0 * self.1),
+            Open::No => NormOpen::Nothing,
         }
     }
 }
 impl ToNorm<NormExit> for PosiWeight<Exit> {
     fn to_norm(&self) -> NormExit {
         if self.1 == 0. {
-            return NormExit::No;
+            return NormExit::Nothing;
         }
         match &self.0 {
-            Exit::Lo(i) => NormExit::Lo(i.len() as f64 * self.1),
-            Exit::Sh(i) => NormExit::Sh(i.len() as f64 * self.1),
-            Exit::No => NormExit::No,
+            Exit::Lo(i) => NormExit::Long(i.len() as f64 * self.1),
+            Exit::Sh(i) => NormExit::Short(i.len() as f64 * self.1),
+            Exit::No => NormExit::Nothing,
         }
     }
 }
